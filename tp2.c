@@ -167,9 +167,9 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 		
 			//escribo a archivo
 			for(int i = 0; i < cant_reg_aux; i++){
-				//HAY QUE HACER MALLOC? 
 				char*linea_aux = heap_desencolar(heap);
 				fprintf(file,"%s",linea_aux );
+				free(linea_aux);
 			}
 			fclose(file);
 		}
@@ -196,6 +196,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 		while(!lista_esta_vacia(lista)){ 
 			char*linea_aux = lista_borrar_primero(lista);
 			fprintf(salida,"%s", linea_aux);
+			free(linea_aux);
 		}
 		fclose(faux);
 	}
