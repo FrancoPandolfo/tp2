@@ -178,38 +178,26 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	}
 	fclose(entrada);
 	heap_destruir(heap,free);
-	FILE *files[num_arch]; //vector de archivos auxiliares
-	for (int i = 0; i < num_arch - 1; i++){
-    	char filename[7];
-    	sprintf(filename, "%d.txt", (i + 1));
-   	 	files[i] = fopen(filename, "r");
-	}
-
 	lista_t* lista = lista_crear();
-	size_t cant2 = 0;
-	char*linea2 = NULL;
-	ssize_t leidos2 = 0;
-	int contador = 0;
-	while (contador < cant_reg){ 
-		//encolo num_arch lineas
-		for (int i = 0; i < (num_arch - 1); i++){
-    		leidos2 = getline (&linea2,&cant2,files[i]);
-    		if (leidos2 != -1){
-    			lista_insertar_ultimo(lista,linea2);
-    			contador++;
-    		}
+
+	for (int i = 0; i <num_arch - 1; i++){
+		char filename[7];
+    	sprintf(filename, "%d.txt", (i + 1));
+   	 	FILE*faux = fopen(filename, "r");
+
+		size_t cant2 = 0;
+		char*linea2 = NULL;
+		ssize_t leidos2 = 0;
+   	 	while (leidos2 != -1){ 
+   	 		leidos2 = getline (&linea2,&cant2,faux);
+    		if (leidos2 != -1) lista_insertar_ultimo(lista,linea2);
     		linea2 = NULL;
 		}
-
-		//escribo en archivo salida
 		while(!lista_esta_vacia(lista)){ 
 			char*linea_aux = lista_borrar_primero(lista);
 			fprintf(salida,"%s", linea_aux);
 		}
-	}
-	//cierro archivos
-	for (int i = 0; i < num_arch - 1; i++){
-		fclose(files[i]);
+		fclose(faux);
 	}
 	fclose(salida);
 	//borro archivos auxiliares
