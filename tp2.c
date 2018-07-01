@@ -4,6 +4,7 @@
 #define __USE_XOPEN
 #include "tp2.h"
 #include "lista.h"
+#include "hash.h"
 #include "strutil.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -203,132 +204,106 @@ void agregar_archivo(char*archivo){
 		return;
 	} 
 
-	lista_t* lista_tiempo = lista_crear();
-	lista_t* lista_ip = lista_crear();
+	hash_t* hash = hash_crear(free);
 
-	size_t cant2 = 0;
-	char*linea2 = NULL;
-	int con = 0;
-	ssize_t leidos2 = 0;
-	//null terminated
-	// HAY QUE LIBERAR TODA LA MEMORIA
-	while((con < TAM_PRED) && (leidos2 != -1)){
-		leidos2 = getline (&linea2,&cant2,entrada);
-		if (leidos2 != -1){ 
-			// SPLIT HACE MALLOC
-			// hago un split a linea
-			char**registro = split(linea2,'\t');
-			//inserto el ip en lista ip
-			lista_insertar_ultimo(lista_ip, registro[0]);
-			time_t *aux_tiemp = malloc(sizeof(time_t*));
-			*aux_tiemp = iso8601_to_time(registro[1]);
-			lista_insertar_ultimo(lista_tiempo,aux_tiemp);
-		}
-		con++;
-		linea2 = NULL;
-	} 
 	size_t cant = 0;
 	char*linea = NULL;
 	ssize_t leidos = 0;
+	//null terminated
+	// HAY QUE LIBERAR TODA LA MEMORIA
+	while(leidos != -1){
+		leidos = getline (&linea,&cant,entrada);
+		if (leidos != -1){ 
+			// SPLIT HACE MALLOC
+			// hago un split a linea
+			char**registro = split(linea,'\t');
+			//guardo ip como clave y linea como dato
+			//char*ip_guardar = malloc(sizeof(char) * strlen(registro[0]));
+			char*ip_guardar = registro[0];
+			hash_guardar(hash,ip_guardar,linea);
+			free_strv(registro);
+		}
+		linea = NULL;
+	} 
+	int dos = 1;
+	//LIBERAR LOS SPLIT
+	hash_iter_t* iter1 = hash_iter_crear(hash);
+	const char*ip1 = hash_iter_ver_actual(iter1);
+	char*linea1 = hash_obtener(hash,ip1);
+	char**registro1 = split(linea1,'\t');
+	time_t tiempo1 = iso8601_to_time(registro1[1]);
+	free_strv(registro1);
 
-	int dos = 0;
+	hash_iter_t* iter2 = hash_iter_crear(hash);
+	hash_iter_avanzar(iter2);
+	const char*ip2 = hash_iter_ver_actual(iter2);
+	char*linea2 = hash_iter_ver_actual_dato(iter2);
+	char**registro2 = split(linea2,'\t');
+	time_t tiempo2 = iso8601_to_time(registro2[1]);
+	free_strv(registro2);
 
-	//creo iterador de lista tiempo
-	lista_iter_t* iter_tiempo = lista_iter_crear(lista_tiempo);	
-	//guardo el primero de la lista en tiempo
-	time_t *aux_t = lista_iter_ver_actual(iter_tiempo);
-	time_t tiempo = *aux_t;
-	//avanzo la lista tiempo
-	lista_iter_avanzar(iter_tiempo);
-	time_t *taux = lista_iter_ver_actual(iter_tiempo);
-	time_t tiempo_aux = *taux;
-	//crep un iterador de lista ip
-	lista_iter_t* iter_ipfijo = lista_iter_crear(lista_ip);
-	//guardo el primero de la lista en ip
-	char*ip = lista_iter_ver_actual(iter_ipfijo);
-
-	lista_iter_t* iter_ip = lista_iter_crear(lista_ip);
-	//avanzo la lista ip
-	lista_iter_avanzar(iter_ip);
-
-	char* ult_impreso;
-	heap_t* heap = heap_crear(cmp2);
-
-	while ((leidos != -1) || (lista_largo(lista_ip) > 5)){ //FUNCIONA || lista_largo(lista_ip) > 5 ?
-		//printf("%lf %lf\n",(double)tiempo,(double)tiempo_aux );
-		//printf("%lf\n",(double)fabs(difftime(tiempo,tiempo_aux)));
-		//printf("%d\n",dos );
-		//printf("%zu\n",lista_largo(lista_ip) );
-		if (fabs(difftime(tiempo,tiempo_aux)) <= 2){
-			char*ip_aux = lista_iter_ver_actual(iter_ip);
-			//printf("%s %s\n",ip,ip_aux );
-			//printf("%d\n",strcmp(ip,ip_aux) );
-			if(strcmp(ip,ip_aux) == 0){
+	int contador = 0;
+	while (hash_cantidad(hash) > contador){ 
+		while(strcmp(ip1,ip2) == 0){
+			//printf("%s\n",ip1);
+			//printf("%lf %lf\n",(double)tiempo1,(double)tiempo2 );
+			//printf("%d\n",dos );
+			if (fabs(difftime(tiempo1,tiempo2)) <= 2){
 				dos++;
-				lista_iter_avanzar(iter_ip);
-				lista_iter_avanzar(iter_tiempo);
-				time_t *taux = lista_iter_ver_actual(iter_tiempo);
-				tiempo_aux = *taux;
+				if (dos == 5){
+					printf("DoS: %s\n",ip1);
+					dos = 0;
+					break;
+				}
+				hash_iter_avanzar(iter2);
+				ip2 = hash_iter_ver_actual(iter2);
+				linea2 = hash_iter_ver_actual_dato(iter2);
+				registro2 = split(linea2,'\t');
+				tiempo2 = iso8601_to_time(registro2[1]);
+				free_strv(registro2);
 			}
 			else{
-				lista_iter_avanzar(iter_ip);
-				lista_iter_avanzar(iter_tiempo);
-				time_t *taux = lista_iter_ver_actual(iter_tiempo);
-				tiempo_aux = *taux;	
+				hash_iter_avanzar(iter1);
+				ip1 = hash_iter_ver_actual(iter1);
+				linea1 = hash_iter_ver_actual_dato(iter1);
+				registro1 = split(linea1,'\t');
+				tiempo1 = iso8601_to_time(registro1[1]);
+				free_strv(registro1);
+
+				hash_iter_avanzar(iter2);
+				ip2 = hash_iter_ver_actual(iter2);
+				linea2 = hash_iter_ver_actual_dato(iter2);
+				registro2 = split(linea2,'\t');
+				tiempo2 = iso8601_to_time(registro2[1]);
+				free_strv(registro2);
 			}
 		}
+		//caso de break
+		while(strcmp(ip1,ip2) == 0){
+			hash_iter_avanzar(iter1);
+			ip1 = hash_iter_ver_actual(iter1);
 
-		if (dos == 5){
-			//FUNCIONA LA PRIMERA COMPARACION?
-			if(strcmp(ip,ult_impreso) != 0){ 
-				//HAY QUE IMPRIMIR EN ORDEN CRECIENTE, HEAP CON LA OTRA FUNCION DE COMPARACION
-				heap_encolar(heap, ip);
-			}
-			dos = 0;
-			ult_impreso = ip;
+			hash_iter_avanzar(iter2);
+			ip2 = hash_iter_ver_actual(iter2);
 		}
+		//cuando sale del while tengo que avanzar una posicion mas con ambos iter
+		hash_iter_avanzar(iter1);
+		ip1 = hash_iter_ver_actual(iter1);
+		linea1 = hash_iter_ver_actual_dato(iter1);
+		registro1 = split(linea1,'\t');
+		tiempo1 = iso8601_to_time(registro1[1]);
+		free_strv(registro1);
 
-		if (fabs(difftime(tiempo,tiempo_aux)) > 2){
-			char*ip_borrar = lista_iter_borrar(iter_ipfijo);
-			free(ip_borrar);
-			lista_borrar_primero(lista_tiempo);
-			if (leidos != -1) leidos = getline (&linea,&cant,entrada);
-			if (leidos != -1){ 
-				// SPLIT HACE MALLOC
-				// hago un split a linea
-				char**registro = split(linea,'\t');
-				//inserto el ip en lista ip
-				lista_insertar_ultimo(lista_ip, registro[0]);
-
-				time_t aux_tiemp = iso8601_to_time(registro[1]);
-				lista_insertar_ultimo(lista_tiempo,&aux_tiemp);
-			}
-			linea = NULL;
-			lista_iter_destruir(iter_ip);
-			lista_iter_t* iter_ip = lista_iter_crear(lista_ip);
-			lista_iter_avanzar(iter_ip);
-
-			lista_iter_destruir(iter_tiempo);
-			lista_iter_t* iter_tiempo = lista_iter_crear(lista_tiempo);
-			time_t *aux_t = lista_iter_ver_actual(iter_tiempo);
-			tiempo = *aux_t;
-			lista_iter_avanzar(iter_tiempo);
-			time_t *taux = lista_iter_ver_actual(iter_tiempo);
-			tiempo_aux = *taux;
-
-		}
+		hash_iter_avanzar(iter2);
+		ip2 = hash_iter_ver_actual(iter2);
+		linea2 = hash_iter_ver_actual_dato(iter2);
+		registro2 = split(linea2,'\t');
+		tiempo2 = iso8601_to_time(registro2[1]);
+		free_strv(registro2);
 	}
-	for (int i = 0; i < heap_cantidad(heap); i++){
-		char*imprimir = heap_desencolar(heap); 
-		printf("DoS: %s\n",imprimir);
-		free(imprimir);
-	}	
-	heap_destruir(heap,free);
-	lista_iter_destruir(iter_ipfijo);
-	lista_iter_destruir(iter_ip);
-	lista_iter_destruir(iter_tiempo);
-	lista_destruir(lista_ip,free);
-	lista_destruir(lista_tiempo,free);
+	hash_iter_destruir(iter1);
+	hash_iter_destruir(iter2);
+	hash_destruir(hash);
 }
 
 //la hago con la idea de que recibe un heap con los ips
