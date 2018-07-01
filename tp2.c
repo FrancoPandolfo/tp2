@@ -116,7 +116,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 
 	heap_t* heap = heap_crear(cmp);
 	//calculo cantidad de registros maxima por iteracion
-	size_t CANT_REGISTROS = (capacidad * BYTE_SIZE) / TAM_MAX_LINEA;
+	size_t CANT_REGISTROS = ((capacidad / 4) * BYTE_SIZE) / TAM_MAX_LINEA;
 	size_t cant = 0;
 	char*linea = NULL;
 	ssize_t leidos = 0;
@@ -347,8 +347,11 @@ void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
 
 int main(int argc, char*argv[]){
 
-	heap_t* heap = heap_crear(cmp2);
-	/*FILE* archivo = fopen(argv[4],"r");
+	if (argc == 2){
+		size_t capacidad_maxima = atoi(argv[1]);
+
+		heap_t* heap = heap_crear(cmp2);
+		/*FILE* archivo = fopen(argv[4],"r");
 			size_t cant = 0;
 			char*linea = NULL;
 			ssize_t leidos = 0;
@@ -362,59 +365,58 @@ int main(int argc, char*argv[]){
 				linea = NULL;
 			}
 			fclose(archivo);*/
+		while(true){ 
 
-	if (argc == 3) {
-		if (strcmp(argv[1],"agregar_archivo") == 0){
-			agregar_archivo(argv[2]);
-			printf("OK\n");
-			//abrir argv[2] sacar por split los ips y guardarlos en un heap
-			FILE* archivo = fopen(argv[2],"r");
-			size_t cant = 0;
-			char*linea = NULL;
-			ssize_t leidos = 0;
-			while (leidos != -1){
-				leidos = getline (&linea,&cant,archivo);
-				if (leidos != -1){ 
-					//SPLIT HACE MALLOC
-					char**string = split(linea,'\t');
-					heap_encolar(heap,string[0]);
+			char parametro1[15];
+			char parametro2[22];
+			char parametro3[22];
+			scanf("%s %s %s",parametro1, parametro2, parametro3);
+			printf("%s %s %s\n",parametro1,parametro2,parametro3 );
+			if ( (strcmp(parametro1,"agregar_archivo") == 0)) {
+				agregar_archivo(parametro2);
+				printf("OK\n");
+				//abrir argv[2] sacar por split los ips y guardarlos en un heap
+				FILE* archivo = fopen(parametro2,"r");
+				size_t cant = 0;
+				char*linea = NULL;
+				ssize_t leidos = 0;
+				while (leidos != -1){
+					leidos = getline (&linea,&cant,archivo);
+					if (leidos != -1){ 
+						//SPLIT HACE MALLOC
+						char**string = split(linea,'\t');
+						heap_encolar(heap,string[0]);
+					}
+					linea = NULL;
 				}
-				linea = NULL;
+				fclose(archivo);
 			}
-			fclose(archivo);
-		}
-		else{
-			fprintf(stderr, "%s %s\n", "Error en comando", argv[1]);
-			return 0;
-		}
-	}
 
-	if (argc == 5){
-		if (strcmp(argv[1],"ver_visitantes") == 0){
-			ver_vistitantes(argv[2],argv[3],heap);
-			printf("OK\n");
-		}
-		else{
-			fprintf(stderr, "%s %s\n", "Error en comando", argv[1]);
-			return 0;
-		}
-	}
-	if (argc == 5){
-		if (strcmp(argv[1],"ordenar_archivo") == 0){
-			size_t cap = atoi(argv[4]);
-			ordenar_archivo(argv[2],argv[3],cap);
-			printf("OK\n");
-		}
-		else{
-			fprintf(stderr, "%s %s\n", "Error en comando", argv[1]);
-			return 0;
+			if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0)){ 
+				if (strcmp(parametro1,"ver_visitantes") == 0){
+					ver_vistitantes(parametro2,parametro3,heap);
+					printf("OK\n");
+				}
+				if (strcmp(parametro1,"ver_visitantes") != 0){
+					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+						return 0;
+				}
+				if (strcmp(parametro1,"ordenar_archivo") == 0){
+					ordenar_archivo(parametro2,parametro3,capacidad_maxima);
+					printf("OK\n");
+				}
+				if (strcmp(parametro1,"ordenar_archivo") != 0){
+					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+					return 0;
+				}
+			}
+			else{
+				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+				return 0;
+			}
 		}
 	}
 	else{
-		fprintf(stderr, "%s %s\n", "Error en comando", argv[1]);
-		return 0;
+		printf("cantidad parametros incorrecta\n");
 	}
-	
-	//heap_destruir(heap,free);
-	return 0;
 }
