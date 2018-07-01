@@ -235,10 +235,8 @@ void agregar_archivo(char*archivo){
 			char**registro = split(linea2,'\t');
 			//inserto el ip en lista ip
 			lista_insertar_ultimo(lista_ip, registro[0]);
-			//HACE FALTA EL MALLOC A aux_tiempo ?
-			time_t* aux_tiemp = malloc(sizeof(time_t));
-			*aux_tiemp = iso8601_to_time(registro[1]);
-			lista_insertar_ultimo(lista_tiempo,aux_tiemp);
+			time_t aux_tiemp = iso8601_to_time(registro[1]);
+			lista_insertar_ultimo(lista_tiempo,&aux_tiemp);
 		}
 		con++;
 		linea2 = NULL;
@@ -252,10 +250,10 @@ void agregar_archivo(char*archivo){
 	//creo iterador de lista tiempo
 	lista_iter_t* iter_tiempo = lista_iter_crear(lista_tiempo);	
 	//guardo el primero de la lista en tiempo
-	time_t* tiempo = lista_iter_ver_actual(iter_tiempo);
+	time_t tiempo = (time_t)lista_iter_ver_actual(iter_tiempo);
 	//avanzo la lista tiempo
 	lista_iter_avanzar(iter_tiempo);
-	time_t* tiempo_aux = lista_iter_ver_actual(iter_tiempo);
+	time_t tiempo_aux = (time_t)lista_iter_ver_actual(iter_tiempo);
 
 	//crep un iterador de lista ip
 	lista_iter_t* iter_ipfijo = lista_iter_crear(lista_ip);
@@ -271,17 +269,17 @@ void agregar_archivo(char*archivo){
 
 	while ((leidos != -1) || (lista_largo(lista_ip) > 5)){ //FUNCIONA || lista_largo(lista_ip) > 5 ?
 
-		if (difftime(*tiempo,*tiempo_aux) <= 2){
+		if (difftime(tiempo,tiempo_aux) <= 2){
 			if(strcmp(ip, lista_iter_ver_actual(iter_ip)) == 0){
 				dos++;
 				lista_iter_avanzar(iter_ip);
 				lista_iter_avanzar(iter_tiempo);
-				tiempo_aux = lista_iter_ver_actual(iter_tiempo);
+				tiempo_aux = (time_t)lista_iter_ver_actual(iter_tiempo);
 			}
 			else{
 				lista_iter_avanzar(iter_ip);
 				lista_iter_avanzar(iter_tiempo);
-				tiempo_aux = lista_iter_ver_actual(iter_tiempo);
+				tiempo_aux = (time_t)lista_iter_ver_actual(iter_tiempo);
 			}
 		}
 
@@ -295,8 +293,9 @@ void agregar_archivo(char*archivo){
 			ult_impreso = ip;
 		}
 
-		if (difftime(*tiempo,*tiempo_aux) > 2){
-			lista_iter_borrar(iter_ipfijo);
+		if (difftime(tiempo,tiempo_aux) > 2){
+			char*ip_borrar = lista_iter_borrar(iter_ipfijo);
+			free(ip_borrar);
 			lista_borrar_primero(lista_tiempo);
 			leidos = getline (&linea,&cant,entrada);
 			if (leidos != -1){ 
@@ -306,9 +305,8 @@ void agregar_archivo(char*archivo){
 				//inserto el ip en lista ip
 				lista_insertar_ultimo(lista_ip, registro[0]);
 
-				time_t* aux_tiemp = malloc(sizeof(time_t));
-				*aux_tiemp = iso8601_to_time(registro[1]);
-				lista_insertar_ultimo(lista_tiempo,aux_tiemp);
+				time_t aux_tiemp = iso8601_to_time(registro[1]);
+				lista_insertar_ultimo(lista_tiempo,&aux_tiemp);
 			}
 			linea = NULL;
 			lista_iter_destruir(iter_ip);
@@ -317,15 +315,16 @@ void agregar_archivo(char*archivo){
 
 			lista_iter_destruir(iter_tiempo);
 			lista_iter_t* iter_tiempo = lista_iter_crear(lista_tiempo);
-			tiempo = lista_iter_ver_actual(iter_tiempo);
+			tiempo = (time_t)lista_iter_ver_actual(iter_tiempo);
 			lista_iter_avanzar(iter_tiempo);
-			tiempo_aux = lista_iter_ver_actual(iter_tiempo);
+			tiempo_aux = (time_t)lista_iter_ver_actual(iter_tiempo);
 
 		}
 	}
 	for (int i = 0; i < heap_cantidad(heap); i++){
 		char*imprimir = heap_desencolar(heap); 
 		printf("DoS: %s\n",imprimir);
+		free(imprimir);
 	}	
 	heap_destruir(heap,free);
 	lista_iter_destruir(iter_ipfijo);
