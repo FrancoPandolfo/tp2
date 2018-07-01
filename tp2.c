@@ -314,38 +314,28 @@ void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
 	heap_t* heap_aux = heap;
 	char*vector;
 	//SPLIT HACE MALLOC
+	//LIBERAR LOS SPLIT
 	char**dess = split(desde,'.');
 	char**hass = split(hasta,'.');
-	//join fue modificado para unir sin sep
-	char*desj = join(dess);
-	char*hasj = join(hass);
-	long unsigned desde_num = atol(desj);
-	long unsigned hasta_num = atol(hasj);
 
 	char*ip = heap_desencolar(heap_aux);
 	vector = ip;
 	char**ips = split(ip,'.');
-	char*ipj = join(ips);
-	long unsigned ip_num = atol(ipj);
 
 	printf("Visitantes:\n");
 	while (!heap_esta_vacio(heap_aux)){ 
-		if ((ip_num >= desde_num) && (ip_num <= hasta_num)){
+		if ((ip_cmp(ips,dess) <= 0) && (ip_cmp(ips,hass) >= 0)){ 
 			printf("\t%s\n",vector);
 			ip = heap_desencolar(heap_aux);
 			vector = ip;
 			ips = split(ip,'.');
-			ipj = join(ips);
-			ip_num = atol(ipj);
 		}
-		if(ip_num < desde_num){
+		if(ip_cmp(ips,dess) > 0){ 
 			ip = heap_desencolar(heap_aux);
 			vector = ip;
 			ips = split(ip,'.');
-			ipj = join(ips);
-			ip_num = atol(ipj);
 		}	
-		if(ip_num > hasta_num){
+		if(ip_cmp(ips,hass) < 0){ 
 			break;
 		}
 	}
