@@ -67,7 +67,8 @@ char* join(char** strv){
 		return str;
 	}
 	int cant = strv_cant(strv);
-	char*str = malloc(sizeof(char) * (strv_len(strv) + cant + 1) );
+	//borre un +cant
+	char*str = malloc(sizeof(char) * (strv_len(strv) + 1) );
 	if(str == NULL) return NULL;
 	int cont = 0;
 	size_t len = 0;
@@ -78,9 +79,10 @@ char* join(char** strv){
 			cont++;
 		}
 		//str[cont] = sep;
-		cont++;
+		//cont++;
 	}
-	str[cont-1] = '\0';
+	//era cont-1
+	str[cont] = '\0';
 	return str;
 }
 

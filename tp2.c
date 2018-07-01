@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 
 #define TIME_FORMAT "%FT%T%z"
@@ -84,30 +85,14 @@ int cmp(const void*a, const void *b){
  *************************************************/
 
 int comparacion2(char*linea1, char*linea2){
-	char**lineas1 = split(linea1,'\t');
-	char**lineas2 = split(linea1,'\t');
-	char*ip1 = lineas1[0];
-	char*ip2 = lineas2[0];
-	char**ips1 = split(ip1,'.');
-	char**ips2 = split(ip2,'.');
-	//join fue modificado para unir sin sep
-	char*ipsj1 = join(ips1);
-	char*ipsj2 = join(ips2);
-	size_t ip1_num = atoi(ipsj1);
-	size_t ip2_num = atoi(ipsj2);
+	char **strv_ip_a = split(linea1, '.');
+	char **strv_ip_b = split(linea2, '.');
+	int res_ip = ip_cmp(strv_ip_a, strv_ip_b);
 
-	if (ip1_num == ip2_num){
-		free(lineas1), free(lineas2), free(ips1), free(ips2), free(ipsj1), free(ipsj2);
-		return 0;
-	}
-	else if (ip1_num < ip2_num){
-		free(lineas1), free(lineas2), free(ips1), free(ips2), free(ipsj1), free(ipsj2);
-		return 1;
-	}
-	else{
-		free(lineas1), free(lineas2), free(ips1), free(ips2), free(ipsj1), free(ipsj2);
-		return -1;
-	}
+	free_strv(strv_ip_a);
+	free_strv(strv_ip_b);
+
+	return res_ip;
 }
 
 int cmp2(const void *n1, const void *n2){
@@ -235,8 +220,9 @@ void agregar_archivo(char*archivo){
 			char**registro = split(linea2,'\t');
 			//inserto el ip en lista ip
 			lista_insertar_ultimo(lista_ip, registro[0]);
-			time_t aux_tiemp = iso8601_to_time(registro[1]);
-			lista_insertar_ultimo(lista_tiempo,&aux_tiemp);
+			time_t *aux_tiemp = malloc(sizeof(time_t*));
+			*aux_tiemp = iso8601_to_time(registro[1]);
+			lista_insertar_ultimo(lista_tiempo,aux_tiemp);
 		}
 		con++;
 		linea2 = NULL;
@@ -250,11 +236,12 @@ void agregar_archivo(char*archivo){
 	//creo iterador de lista tiempo
 	lista_iter_t* iter_tiempo = lista_iter_crear(lista_tiempo);	
 	//guardo el primero de la lista en tiempo
-	time_t tiempo = (time_t)lista_iter_ver_actual(iter_tiempo);
+	time_t *aux_t = lista_iter_ver_actual(iter_tiempo);
+	time_t tiempo = *aux_t;
 	//avanzo la lista tiempo
 	lista_iter_avanzar(iter_tiempo);
-	time_t tiempo_aux = (time_t)lista_iter_ver_actual(iter_tiempo);
-
+	time_t *taux = lista_iter_ver_actual(iter_tiempo);
+	time_t tiempo_aux = *taux;
 	//crep un iterador de lista ip
 	lista_iter_t* iter_ipfijo = lista_iter_crear(lista_ip);
 	//guardo el primero de la lista en ip
@@ -268,18 +255,26 @@ void agregar_archivo(char*archivo){
 	heap_t* heap = heap_crear(cmp2);
 
 	while ((leidos != -1) || (lista_largo(lista_ip) > 5)){ //FUNCIONA || lista_largo(lista_ip) > 5 ?
-
-		if (difftime(tiempo,tiempo_aux) <= 2){
-			if(strcmp(ip, lista_iter_ver_actual(iter_ip)) == 0){
+		//printf("%lf %lf\n",(double)tiempo,(double)tiempo_aux );
+		//printf("%lf\n",(double)fabs(difftime(tiempo,tiempo_aux)));
+		//printf("%d\n",dos );
+		//printf("%zu\n",lista_largo(lista_ip) );
+		if (fabs(difftime(tiempo,tiempo_aux)) <= 2){
+			char*ip_aux = lista_iter_ver_actual(iter_ip);
+			//printf("%s %s\n",ip,ip_aux );
+			//printf("%d\n",strcmp(ip,ip_aux) );
+			if(strcmp(ip,ip_aux) == 0){
 				dos++;
 				lista_iter_avanzar(iter_ip);
 				lista_iter_avanzar(iter_tiempo);
-				tiempo_aux = (time_t)lista_iter_ver_actual(iter_tiempo);
+				time_t *taux = lista_iter_ver_actual(iter_tiempo);
+				tiempo_aux = *taux;
 			}
 			else{
 				lista_iter_avanzar(iter_ip);
 				lista_iter_avanzar(iter_tiempo);
-				tiempo_aux = (time_t)lista_iter_ver_actual(iter_tiempo);
+				time_t *taux = lista_iter_ver_actual(iter_tiempo);
+				tiempo_aux = *taux;	
 			}
 		}
 
@@ -293,15 +288,15 @@ void agregar_archivo(char*archivo){
 			ult_impreso = ip;
 		}
 
-		if (difftime(tiempo,tiempo_aux) > 2){
+		if (fabs(difftime(tiempo,tiempo_aux)) > 2){
 			char*ip_borrar = lista_iter_borrar(iter_ipfijo);
 			free(ip_borrar);
 			lista_borrar_primero(lista_tiempo);
-			leidos = getline (&linea,&cant,entrada);
+			if (leidos != -1) leidos = getline (&linea,&cant,entrada);
 			if (leidos != -1){ 
 				// SPLIT HACE MALLOC
 				// hago un split a linea
-				char**registro = split(linea2,'\t');
+				char**registro = split(linea,'\t');
 				//inserto el ip en lista ip
 				lista_insertar_ultimo(lista_ip, registro[0]);
 
@@ -315,9 +310,11 @@ void agregar_archivo(char*archivo){
 
 			lista_iter_destruir(iter_tiempo);
 			lista_iter_t* iter_tiempo = lista_iter_crear(lista_tiempo);
-			tiempo = (time_t)lista_iter_ver_actual(iter_tiempo);
+			time_t *aux_t = lista_iter_ver_actual(iter_tiempo);
+			tiempo = *aux_t;
 			lista_iter_avanzar(iter_tiempo);
-			tiempo_aux = (time_t)lista_iter_ver_actual(iter_tiempo);
+			time_t *taux = lista_iter_ver_actual(iter_tiempo);
+			tiempo_aux = *taux;
 
 		}
 	}
@@ -336,7 +333,9 @@ void agregar_archivo(char*archivo){
 
 //la hago con la idea de que recibe un heap con los ips
 void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
+	//FUNCION DE COMAPRACION2 FUNCIONA MAL
 	//ESTOY CREANDO UN heap_aux IGUAL A heap O SOLO ES UN PUNTERO?
+	//ES SOLO UN PUNTERO
 	heap_t* heap_aux = heap;
 	char*vector;
 	//SPLIT HACE MALLOC
@@ -345,14 +344,14 @@ void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
 	//join fue modificado para unir sin sep
 	char*desj = join(dess);
 	char*hasj = join(hass);
-	size_t desde_num = atoi(desj);
-	size_t hasta_num = atoi(hasj);
+	long unsigned desde_num = atol(desj);
+	long unsigned hasta_num = atol(hasj);
 
 	char*ip = heap_desencolar(heap_aux);
 	vector = ip;
-	char**ips = split(hasta,'.');
+	char**ips = split(ip,'.');
 	char*ipj = join(ips);
-	size_t ip_num = atoi(ipj);
+	long unsigned ip_num = atol(ipj);
 
 	printf("Visitantes:\n");
 	while (!heap_esta_vacio(heap_aux)){ 
@@ -360,16 +359,16 @@ void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
 			printf("\t%s\n",vector);
 			ip = heap_desencolar(heap_aux);
 			vector = ip;
-			ips = split(hasta,'.');
+			ips = split(ip,'.');
 			ipj = join(ips);
-			ip_num = atoi(ipj);
+			ip_num = atol(ipj);
 		}
 		if(ip_num < desde_num){
 			ip = heap_desencolar(heap_aux);
 			vector = ip;
-			ips = split(hasta,'.');
+			ips = split(ip,'.');
 			ipj = join(ips);
-			ip_num = atoi(ipj);
+			ip_num = atol(ipj);
 		}	
 		if(ip_num > hasta_num){
 			break;
@@ -384,6 +383,20 @@ void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
 int main(int argc, char*argv[]){
 
 	heap_t* heap = heap_crear(cmp2);
+	/*FILE* archivo = fopen(argv[4],"r");
+			size_t cant = 0;
+			char*linea = NULL;
+			ssize_t leidos = 0;
+			while (leidos != -1){
+				leidos = getline (&linea,&cant,archivo);
+				if (leidos != -1){ 
+					//SPLIT HACE MALLOC
+					char**string = split(linea,'\t');
+					heap_encolar(heap,string[0]);
+				}
+				linea = NULL;
+			}
+			fclose(archivo);*/
 
 	if (argc == 3) {
 		if (strcmp(argv[1],"agregar_archivo") == 0){
@@ -411,8 +424,8 @@ int main(int argc, char*argv[]){
 		}
 	}
 
-	if (argc == 4){
-		if (strcmp(argv[1],"ver_vistitantes") == 0){
+	if (argc == 5){
+		if (strcmp(argv[1],"ver_visitantes") == 0){
 			ver_vistitantes(argv[2],argv[3],heap);
 			printf("OK\n");
 		}
@@ -437,6 +450,6 @@ int main(int argc, char*argv[]){
 		return 0;
 	}
 	
-	heap_destruir(heap,free);
+	//heap_destruir(heap,free);
 	return 0;
 }
