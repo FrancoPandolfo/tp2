@@ -295,11 +295,14 @@ void agregar_archivo(char*archivo){
 		free_strv(registro1);
 
 		hash_iter_avanzar(iter2);
-		ip2 = hash_iter_ver_actual(iter2);
-		linea2 = hash_iter_ver_actual_dato(iter2);
-		registro2 = split(linea2,'\t');
-		tiempo2 = iso8601_to_time(registro2[1]);
-		free_strv(registro2);
+		if (!hash_iter_al_final(iter2)){ 
+			ip2 = hash_iter_ver_actual(iter2);
+			linea2 = hash_iter_ver_actual_dato(iter2);
+			registro2 = split(linea2,'\t');
+			tiempo2 = iso8601_to_time(registro2[1]);
+			free_strv(registro2); 
+		}
+		else break;
 	}
 	hash_iter_destruir(iter1);
 	hash_iter_destruir(iter2);
@@ -351,6 +354,9 @@ int main(int argc, char*argv[]){
 		size_t capacidad_maxima = atoi(argv[1]);
 
 		heap_t* heap = heap_crear(cmp2);
+		size_t cant = 0;
+		char*linea = NULL;
+		//ssize_t leidos = 0;
 		/*FILE* archivo = fopen(argv[4],"r");
 			size_t cant = 0;
 			char*linea = NULL;
@@ -365,13 +371,23 @@ int main(int argc, char*argv[]){
 				linea = NULL;
 			}
 			fclose(archivo);*/
+		char* parametro1;
+		char* parametro2;
+		char* parametro3;
 		while(true){ 
-
-			char parametro1[15];
-			char parametro2[22];
-			char parametro3[22];
-			scanf("%s %s %s",parametro1, parametro2, parametro3);
-			printf("%s %s %s\n",parametro1,parametro2,parametro3 );
+			//MALLOC DE GETLINE Y SPLIT
+			getline (&linea,&cant,stdin);
+			char**lineas = split(linea,' ');
+			int cant_ing = strv_cant(lineas);
+			if (cant_ing == 2){
+				parametro1 = lineas[0];
+				parametro2 = lineas[1];
+			}
+			if (cant_ing == 3){
+				parametro1 = lineas[0];
+				parametro2 = lineas[1];
+				parametro3 = lineas[2];
+			}
 			if ( (strcmp(parametro1,"agregar_archivo") == 0)) {
 				agregar_archivo(parametro2);
 				printf("OK\n");
@@ -392,26 +408,19 @@ int main(int argc, char*argv[]){
 				fclose(archivo);
 			}
 
-			if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0)){ 
+			if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
 				if (strcmp(parametro1,"ver_visitantes") == 0){
 					ver_vistitantes(parametro2,parametro3,heap);
 					printf("OK\n");
-				}
-				if (strcmp(parametro1,"ver_visitantes") != 0){
-					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
-						return 0;
 				}
 				if (strcmp(parametro1,"ordenar_archivo") == 0){
 					ordenar_archivo(parametro2,parametro3,capacidad_maxima);
 					printf("OK\n");
 				}
-				if (strcmp(parametro1,"ordenar_archivo") != 0){
-					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
-					return 0;
-				}
 			}
-			else{
+			if ((strcmp(parametro1,"agregar_archivo") != 0) && (strcmp(parametro1,"ver_visitantes") != 0) && (strcmp(parametro1,"ordenar_archivo") != 0) ){
 				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+				heap_destruir(heap,free);
 				return 0;
 			}
 		}

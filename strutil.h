@@ -14,6 +14,7 @@ char** split(const char* str, char sep);
 
 char* join(char** strv);
 
+int strv_cant(char**strv);
 /*
  * Libera un arreglo dinámico de cadenas (split), y todas las cadenas que contiene.
  */
