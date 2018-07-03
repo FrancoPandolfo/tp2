@@ -151,6 +151,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 			linea = NULL;
 			cont++;
 		}
+		free(linea);
 		if (!heap_esta_vacio(heap)){ 
 			//abro archivo auxiliar
     		char filename[7];
@@ -191,6 +192,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
     		if (leidos2 != -1) lista_insertar_ultimo(lista,linea2);
     		linea2 = NULL;
 		}
+		free(linea2);
 		while(!lista_esta_vacia(lista)){ 
 			char*linea_aux = lista_borrar_primero(lista);
 			fprintf(salida,"%s", linea_aux);
@@ -237,6 +239,8 @@ void agregar_archivo(char*archivo){
 		}
 		linea = NULL;
 	} 
+	fclose(entrada);
+	free(linea);
 	int dos = 1;
 	//LIBERAR LOS SPLIT
 	hash_iter_t* iter1 = hash_iter_crear(hash);
@@ -339,23 +343,27 @@ void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
 			heap_encolar(heap,(char*)ip);
 			abb_iter_in_avanzar(iter);
 			if (!abb_iter_in_al_final(iter)){ 
+				free_strv(ips);
 				ip = abb_iter_in_ver_actual(iter);
 				ips = split(ip,'.');
 			}
 		}
-		abb_iter_in_avanzar(iter);
-		if (!abb_iter_in_al_final(iter)){
-			ip = abb_iter_in_ver_actual(iter);
-			ips = split(ip,'.');
+		else{ 
+			abb_iter_in_avanzar(iter);
+			if (!abb_iter_in_al_final(iter)){
+				free_strv(ips);
+				ip = abb_iter_in_ver_actual(iter);
+				ips = split(ip,'.');
+			}
 		}
 	}
 	while (!heap_esta_vacio(heap)){
 		char*imprimir = heap_desencolar(heap);
 		printf("\t%s\n",imprimir);
 	}
-	free(dess);
-	free(hass);
-	free(ips);
+	free_strv(ips);
+	free_strv(dess);
+	free_strv(hass);
 	heap_destruir(heap,free);
 }
 
@@ -377,12 +385,11 @@ int main(int argc, char*argv[]){
 			getline (&linea,&cant,stdin);
 			char**lineas = split(linea,' ');
 			int cant_ing = strv_cant(lineas);
+			parametro1 = lineas[0];
 			if (cant_ing == 2){
-				parametro1 = lineas[0];
 				parametro2 = lineas[1];
 			}
 			if (cant_ing == 3){
-				parametro1 = lineas[0];
 				parametro2 = lineas[1];
 				parametro3 = lineas[2];
 			}
@@ -391,19 +398,21 @@ int main(int argc, char*argv[]){
 				printf("OK\n");
 				//abrir argv[2] sacar por split los ips y guardarlos en un heap
 				FILE* archivo = fopen(parametro2,"r");
-				size_t cant = 0;
-				char*linea = NULL;
+				size_t cant2 = 0;
+				char*linea2 = NULL;
 				ssize_t leidos = 0;
 				while (leidos != -1){
-					leidos = getline (&linea,&cant,archivo);
+					leidos = getline (&linea2,&cant2,archivo);
 					if (leidos != -1){ 
 						//SPLIT HACE MALLOC
-						char**string = split(linea,'\t');
+						char**string = split(linea2,'\t');
 						char*ip_guardar = string[0];
 						abb_guardar(abb,ip_guardar,NULL);
+						free_strv(string);
 					}
-					linea = NULL;
+					linea2 = NULL;
 				}
+				free(linea2);
 				fclose(archivo);
 			}
 
@@ -419,9 +428,14 @@ int main(int argc, char*argv[]){
 			}
 			if ((strcmp(parametro1,"agregar_archivo") != 0) && (strcmp(parametro1,"ver_visitantes") != 0) && (strcmp(parametro1,"ordenar_archivo") != 0) ){
 				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+				free(linea);
+				free_strv(lineas);
 				abb_destruir(abb);
 				return 0;
 			}
+			free(linea);
+			linea = NULL;
+			free_strv(lineas);
 		}
 	}
 	else{
