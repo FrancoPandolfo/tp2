@@ -319,34 +319,19 @@ void agregar_archivo(char*archivo){
 }
 
 //la hago con la idea de que recibe un heap con los ips
-<<<<<<< HEAD
 void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
 	//FUNCION DE COMAPRACION2 FUNCIONA MAL
 	//ESTOY CREANDO UN heap_aux IGUAL A heap O SOLO ES UN PUNTERO?
 	//ES SOLO UN PUNTERO
 	abb_iter_t * iter = abb_iter_in_crear(abb);
 	heap_t* heap = heap_crear(cmp2);
-=======
-void ver_visitantes(char* desde, char* hasta, heap_t* heap){
-	//FUNCION DE COMAPRACION2 FUNCIONA MAL
-	//ESTOY CREANDO UN heap_aux IGUAL A heap O SOLO ES UN PUNTERO?
-	//ES SOLO UN PUNTERO
-	heap_t *heap_aux = heap;
-	char *vector;
->>>>>>> d3bb877f80278ec9bbca8c8f5fb42d166b53a81e
 	//SPLIT HACE MALLOC
 	//LIBERAR LOS SPLIT
-	char **dess = split(desde,'.');
-	char **hass = split(hasta,'.');
+	char**dess = split(desde,'.');
+	char**hass = split(hasta,'.');
 
-<<<<<<< HEAD
 	const char*ip = abb_iter_in_ver_actual(iter);
 	char**ips = split(ip,'.');
-=======
-	char *ip = heap_desencolar(heap_aux);
-	vector = ip;
-	char **ips = split(ip,'.');
->>>>>>> d3bb877f80278ec9bbca8c8f5fb42d166b53a81e
 
 	printf("Visitantes:\n");
 	while (!abb_iter_in_al_final(iter)){ 
@@ -373,19 +358,9 @@ void ver_visitantes(char* desde, char* hasta, heap_t* heap){
 	free(ips);
 	heap_destruir(heap,free);
 }
-/*	Aprovecho la idea del heap que recolecta información de las IPs.	*/
-void ver_visitantes(char *ip_ini, char *ip_fin, heap_t *heap){
-	/*	Devuelvo por salida estándar	*/
-	fprintf(stdout, "%s\n", "Visitantes:");	// Si hay problemas en caso de estar vacío el heap ...
-											//	...agregamos una condición heap_esta_vacio()
-	while(!heap_esta_vacio(heap)){
-		char *ip = (char *)heap_desencolar(heap);
-		if(ip_cmp(ip_ini, ip) < 1 && ip_cmp(ip_fin, ip) > -1){
-			fprintf(stdout, "\t%s\n", ip);
-			free((void *)ip);
-		}
-	}
-}
+
+
+
 
 int main(int argc, char*argv[]){
 
@@ -394,34 +369,13 @@ int main(int argc, char*argv[]){
 		abb_t* abb = abb_crear(comparacion3,free);
 		size_t cant = 0;
 		char*linea = NULL;
-<<<<<<< HEAD
 		char* parametro1;
 		char* parametro2;
 		char* parametro3;
-=======
-		//ssize_t leidos = 0;
-		/*FILE* archivo = fopen(argv[4],"r");
-			size_t cant = 0;
-			char*linea = NULL;
-			ssize_t leidos = 0;
-			while (leidos != -1){
-				leidos = getline (&linea,&cant,archivo);
-				if (leidos != -1){ 
-					//SPLIT HACE MALLOC
-					char**string = split(linea,'\t');
-					heap_encolar(heap,string[0]);
-				}
-				linea = NULL;
-			}
-			fclose(archivo);*/
-		char *parametro1;
-		char *parametro2;
-		char *parametro3;
->>>>>>> d3bb877f80278ec9bbca8c8f5fb42d166b53a81e
 		while(true){ 
 			//MALLOC DE GETLINE Y SPLIT
 			getline (&linea,&cant,stdin);
-			char **lineas = split(linea,' ');
+			char**lineas = split(linea,' ');
 			int cant_ing = strv_cant(lineas);
 			if (cant_ing == 2){
 				parametro1 = lineas[0];
@@ -448,18 +402,14 @@ int main(int argc, char*argv[]){
 						char*ip_guardar = string[0];
 						abb_guardar(abb,ip_guardar,NULL);
 					}
-					if(linea) free(linea);
+					linea = NULL;
 				}
 				fclose(archivo);
 			}
 
 			if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
 				if (strcmp(parametro1,"ver_visitantes") == 0){
-<<<<<<< HEAD
 					ver_vistitantes(parametro2,parametro3,abb);
-=======
-					ver_visitantes(parametro2,parametro3,heap);
->>>>>>> d3bb877f80278ec9bbca8c8f5fb42d166b53a81e
 					printf("OK\n");
 				}
 				if (strcmp(parametro1,"ordenar_archivo") == 0){
