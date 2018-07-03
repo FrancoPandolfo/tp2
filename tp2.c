@@ -5,6 +5,7 @@
 #include "tp2.h"
 #include "lista.h"
 #include "hash.h"
+#include "heap.h"
 #include "strutil.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,6 +101,17 @@ int cmp2(const void *n1, const void *n2){
 	return comparacion2((char*)n1, (char *)n2);
 }
 
+int comparacion3(const char*linea1,const char*linea2){
+	char **strv_ip_a = split(linea1, '.');
+	char **strv_ip_b = split(linea2, '.');
+	int res_ip = ip_cmp(strv_ip_a, strv_ip_b);
+
+	free_strv(strv_ip_a);
+	free_strv(strv_ip_b);
+
+	return res_ip;
+}
+
 void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	//abro ambos archivos
 	FILE * entrada = fopen (archin,"r");
@@ -116,7 +128,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 
 	heap_t* heap = heap_crear(cmp);
 	//calculo cantidad de registros maxima por iteracion
-	size_t CANT_REGISTROS = ((capacidad / 4) * BYTE_SIZE) / TAM_MAX_LINEA;
+	size_t CANT_REGISTROS = ((capacidad) * BYTE_SIZE) / TAM_MAX_LINEA;
 	size_t cant = 0;
 	char*linea = NULL;
 	ssize_t leidos = 0;
@@ -245,9 +257,6 @@ void agregar_archivo(char*archivo){
 	int contador = 0;
 	while (hash_cantidad(hash) > contador){ 
 		while(strcmp(ip1,ip2) == 0){
-			//printf("%s\n",ip1);
-			//printf("%lf %lf\n",(double)tiempo1,(double)tiempo2 );
-			//printf("%d\n",dos );
 			if (fabs(difftime(tiempo1,tiempo2)) <= 2){
 				dos++;
 				if (dos == 5){
@@ -310,39 +319,44 @@ void agregar_archivo(char*archivo){
 }
 
 //la hago con la idea de que recibe un heap con los ips
-void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
+void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
 	//FUNCION DE COMAPRACION2 FUNCIONA MAL
 	//ESTOY CREANDO UN heap_aux IGUAL A heap O SOLO ES UN PUNTERO?
 	//ES SOLO UN PUNTERO
-	heap_t* heap_aux = heap;
-	char*vector;
+	abb_iter_t * iter = abb_iter_in_crear(abb);
+	heap_t* heap = heap_crear(cmp2);
 	//SPLIT HACE MALLOC
 	//LIBERAR LOS SPLIT
 	char**dess = split(desde,'.');
 	char**hass = split(hasta,'.');
 
-	char*ip = heap_desencolar(heap_aux);
-	vector = ip;
+	const char*ip = abb_iter_in_ver_actual(iter);
 	char**ips = split(ip,'.');
 
 	printf("Visitantes:\n");
-	while (!heap_esta_vacio(heap_aux)){ 
+	while (!abb_iter_in_al_final(iter)){ 
 		if ((ip_cmp(ips,dess) <= 0) && (ip_cmp(ips,hass) >= 0)){ 
-			printf("\t%s\n",vector);
-			ip = heap_desencolar(heap_aux);
-			vector = ip;
-			ips = split(ip,'.');
+			heap_encolar(heap,(char*)ip);
+			abb_iter_in_avanzar(iter);
+			if (!abb_iter_in_al_final(iter)){ 
+				ip = abb_iter_in_ver_actual(iter);
+				ips = split(ip,'.');
+			}
 		}
-		if(ip_cmp(ips,dess) > 0){ 
-			ip = heap_desencolar(heap_aux);
-			vector = ip;
+		abb_iter_in_avanzar(iter);
+		if (!abb_iter_in_al_final(iter)){
+			ip = abb_iter_in_ver_actual(iter);
 			ips = split(ip,'.');
-		}	
-		if(ip_cmp(ips,hass) < 0){ 
-			break;
 		}
 	}
-	heap_destruir(heap_aux,free);
+	while (!heap_esta_vacio(heap)){
+		char*imprimir = heap_desencolar(heap);
+		printf("\t%s\n",imprimir);
+	}
+	free(dess);
+	free(hass);
+	free(ips);
+	heap_destruir(heap,free);
 }
 
 
@@ -352,25 +366,9 @@ int main(int argc, char*argv[]){
 
 	if (argc == 2){
 		size_t capacidad_maxima = atoi(argv[1]);
-
-		heap_t* heap = heap_crear(cmp2);
+		abb_t* abb = abb_crear(comparacion3,free);
 		size_t cant = 0;
 		char*linea = NULL;
-		//ssize_t leidos = 0;
-		/*FILE* archivo = fopen(argv[4],"r");
-			size_t cant = 0;
-			char*linea = NULL;
-			ssize_t leidos = 0;
-			while (leidos != -1){
-				leidos = getline (&linea,&cant,archivo);
-				if (leidos != -1){ 
-					//SPLIT HACE MALLOC
-					char**string = split(linea,'\t');
-					heap_encolar(heap,string[0]);
-				}
-				linea = NULL;
-			}
-			fclose(archivo);*/
 		char* parametro1;
 		char* parametro2;
 		char* parametro3;
@@ -401,7 +399,8 @@ int main(int argc, char*argv[]){
 					if (leidos != -1){ 
 						//SPLIT HACE MALLOC
 						char**string = split(linea,'\t');
-						heap_encolar(heap,string[0]);
+						char*ip_guardar = string[0];
+						abb_guardar(abb,ip_guardar,NULL);
 					}
 					linea = NULL;
 				}
@@ -410,7 +409,7 @@ int main(int argc, char*argv[]){
 
 			if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
 				if (strcmp(parametro1,"ver_visitantes") == 0){
-					ver_vistitantes(parametro2,parametro3,heap);
+					ver_vistitantes(parametro2,parametro3,abb);
 					printf("OK\n");
 				}
 				if (strcmp(parametro1,"ordenar_archivo") == 0){
@@ -420,7 +419,7 @@ int main(int argc, char*argv[]){
 			}
 			if ((strcmp(parametro1,"agregar_archivo") != 0) && (strcmp(parametro1,"ver_visitantes") != 0) && (strcmp(parametro1,"ordenar_archivo") != 0) ){
 				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
-				heap_destruir(heap,free);
+				abb_destruir(abb);
 				return 0;
 			}
 		}

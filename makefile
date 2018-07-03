@@ -3,7 +3,7 @@ CFLAGS = -g -std=c99 -Wall -Wconversion -Wno-sign-conversion -Werror
 VFLAGS = --leak-check=full --show-reachable=yes --track-origins=yes
 GFLAGS = -tui
 EXEC = pruebas
-OBJFILES = tp2.o heap.o lista.o strutil.o
+OBJFILES = tp2.o heap.o lista.o strutil.o hash.o pila.o abb.o
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c $<
