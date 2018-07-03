@@ -310,20 +310,20 @@ void agregar_archivo(char*archivo){
 }
 
 //la hago con la idea de que recibe un heap con los ips
-void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
+void ver_visitantes(char* desde, char* hasta, heap_t* heap){
 	//FUNCION DE COMAPRACION2 FUNCIONA MAL
 	//ESTOY CREANDO UN heap_aux IGUAL A heap O SOLO ES UN PUNTERO?
 	//ES SOLO UN PUNTERO
-	heap_t* heap_aux = heap;
-	char*vector;
+	heap_t *heap_aux = heap;
+	char *vector;
 	//SPLIT HACE MALLOC
 	//LIBERAR LOS SPLIT
-	char**dess = split(desde,'.');
-	char**hass = split(hasta,'.');
+	char **dess = split(desde,'.');
+	char **hass = split(hasta,'.');
 
-	char*ip = heap_desencolar(heap_aux);
+	char *ip = heap_desencolar(heap_aux);
 	vector = ip;
-	char**ips = split(ip,'.');
+	char **ips = split(ip,'.');
 
 	printf("Visitantes:\n");
 	while (!heap_esta_vacio(heap_aux)){ 
@@ -344,9 +344,19 @@ void ver_vistitantes(char* desde, char* hasta, heap_t* heap){
 	}
 	heap_destruir(heap_aux,free);
 }
-
-
-
+/*	Aprovecho la idea del heap que recolecta información de las IPs.	*/
+void ver_visitantes(char *ip_ini, char *ip_fin, heap_t *heap){
+	/*	Devuelvo por salida estándar	*/
+	fprintf(stdout, "%s\n", "Visitantes:");	// Si hay problemas en caso de estar vacío el heap ...
+											//	...agregamos una condición heap_esta_vacio()
+	while(!heap_esta_vacio(heap)){
+		char *ip = (char *)heap_desencolar(heap);
+		if(ip_cmp(ip_ini, ip) < 1 && ip_cmp(ip_fin, ip) > -1){
+			fprintf(stdout, "\t%s\n", ip);
+			free((void *)ip);
+		}
+	}
+}
 
 int main(int argc, char*argv[]){
 
@@ -371,13 +381,13 @@ int main(int argc, char*argv[]){
 				linea = NULL;
 			}
 			fclose(archivo);*/
-		char* parametro1;
-		char* parametro2;
-		char* parametro3;
+		char *parametro1;
+		char *parametro2;
+		char *parametro3;
 		while(true){ 
 			//MALLOC DE GETLINE Y SPLIT
 			getline (&linea,&cant,stdin);
-			char**lineas = split(linea,' ');
+			char **lineas = split(linea,' ');
 			int cant_ing = strv_cant(lineas);
 			if (cant_ing == 2){
 				parametro1 = lineas[0];
@@ -403,14 +413,14 @@ int main(int argc, char*argv[]){
 						char**string = split(linea,'\t');
 						heap_encolar(heap,string[0]);
 					}
-					linea = NULL;
+					if(linea) free(linea);
 				}
 				fclose(archivo);
 			}
 
 			if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
 				if (strcmp(parametro1,"ver_visitantes") == 0){
-					ver_vistitantes(parametro2,parametro3,heap);
+					ver_visitantes(parametro2,parametro3,heap);
 					printf("OK\n");
 				}
 				if (strcmp(parametro1,"ordenar_archivo") == 0){
