@@ -104,6 +104,9 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 			lista_iter_destruir(iter);
 			return false;
 		}
+		while(!lista_iter_al_final(iter)){
+			lista_iter_avanzar(iter);
+		}
 		lista_iter_insertar(iter, campo);
 		hash->cantidad++;
 	/*}else{;
