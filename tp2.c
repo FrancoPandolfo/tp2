@@ -12,6 +12,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <errno.h>
 
 
 #define TIME_FORMAT "%FT%T%z"
@@ -116,13 +117,13 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	//abro ambos archivos
 	FILE * entrada = fopen (archin,"r");
 	if (!entrada){
-		fprintf(stderr, "%s", "Archivo erroneo\n");
+		fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
 		return;
 	} 
 	FILE * salida = fopen (archout,"w");
 	if (!salida){
 		fclose(entrada);
-		fprintf(stderr, "%s", "Error en Creacion de Archivo\n");
+		fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
 		return;
 	}
 
@@ -215,7 +216,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 void agregar_archivo(char*archivo){
 	FILE * entrada = fopen (archivo,"r");
 	if (!entrada){
-		fprintf(stderr, "%s", "Archivo erroneo\n");
+		fprintf(stderr, "%s %s\n", "Error en comando", "agregar_archivo");
 		return;
 	} 
 
@@ -284,6 +285,7 @@ void agregar_archivo(char*archivo){
 				free_strv(registro1);
 
 				hash_iter_avanzar(iter2);
+				if(hash_iter_al_final(iter2))break;
 				ip2 = hash_iter_ver_actual(iter2);
 				linea2 = hash_iter_ver_actual_dato(iter2);
 				registro2 = split(linea2,'\t');
@@ -291,6 +293,7 @@ void agregar_archivo(char*archivo){
 				free_strv(registro2);
 			}
 		}
+		if(hash_iter_al_final(iter2))break;
 		if (strcmp(ip1,ip2) != 0){ 
 			for(int i = 0; i < contador; i++){
 				hash_iter_avanzar(iter1);
@@ -404,6 +407,12 @@ int main(int argc, char*argv[]){
 				printf("OK\n");
 				//abrir argv[2] sacar por split los ips y guardarlos en un abb
 				FILE* archivo = fopen(parametro2,"r");
+				if (!archivo){
+					free(linea);
+					free_strv(lineas);
+					abb_destruir(abb);
+					return 0;
+				} 
 				size_t cant2 = 0;
 				char*linea2 = NULL;
 				ssize_t leidos = 0;
@@ -423,7 +432,21 @@ int main(int argc, char*argv[]){
 			}
 
 			if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
+				if (cant_ing < 3){
+					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+					free(linea);
+					free_strv(lineas);
+					abb_destruir(abb);
+					return 0;
+				}
 				if (strcmp(parametro1,"ver_visitantes") == 0){
+					if (abb_cantidad(abb) == 0){
+						fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+						free(linea);
+						free_strv(lineas);
+						abb_destruir(abb);
+						return 0;
+					}
 					ver_vistitantes(parametro2,parametro3,abb);
 					printf("OK\n");
 				}
@@ -439,9 +462,9 @@ int main(int argc, char*argv[]){
 				abb_destruir(abb);
 				return 0;
 			}
+			free_strv(lineas);
 			free(linea);
 			linea = NULL;
-			free_strv(lineas);
 		}
 	}
 	else{
