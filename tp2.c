@@ -139,7 +139,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	int cant_reg = 0; //cantidad registros totales
 
 	while (leidos != -1){
-
+		//leo y guardo en heap de minimos
 		while( (cont < CANT_REGISTROS) && (leidos != -1)){
 			//null terminated
 			leidos = getline (&linea,&cant,entrada);
@@ -164,7 +164,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
     		}
     		num_arch++;
 		
-			//escribo a archivo
+			//escribo a archivo auxiliar
 			for(int i = 0; i < cant_reg_aux; i++){
 				char*linea_aux = heap_desencolar(heap);
 				fprintf(file,"%s",linea_aux );
@@ -178,12 +178,16 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	fclose(entrada);
 	heap_destruir(heap,free);
 	lista_t* lista = lista_crear();
-
+	//por cada archivo auxliar lo abro, lo leo a una lista y lo escribo al archivo de salida
 	for (int i = 0; i <num_arch - 1; i++){
 		char filename[7];
     	sprintf(filename, "%d.txt", (i + 1));
    	 	FILE*faux = fopen(filename, "r");
-
+   	 	if (!faux){
+			fclose(salida);
+			fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
+			return;
+		}
 		size_t cant2 = 0;
 		char*linea2 = NULL;
 		ssize_t leidos2 = 0;
@@ -210,6 +214,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 		remove(filename);
 	}
 	lista_destruir(lista,free);
+	printf("OK\n");
 }
 
 
@@ -219,7 +224,7 @@ void agregar_archivo(char*archivo){
 		fprintf(stderr, "%s %s\n", "Error en comando", "agregar_archivo");
 		return;
 	} 
-
+	//en el hash se van a guardar todos los mismos ips en una misma posicion/lista. 
 	hash_t* hash = hash_crear(free);
 
 	size_t cant = 0;
@@ -232,7 +237,6 @@ void agregar_archivo(char*archivo){
 			// hago un split a linea
 			char**registro = split(linea,'\t');
 			//guardo ip como clave y linea como dato
-			//en el hash se van a guardar todos los mismos ips en una misma linea. la clave es el ip y el dato el registro
 			char*ip_guardar = registro[0];
 			hash_guardar(hash,ip_guardar,linea);
 			free_strv(registro);
@@ -242,7 +246,7 @@ void agregar_archivo(char*archivo){
 	fclose(entrada);
 	free(linea);
 	int dos = 1;
-
+	//creo dos iteradores para recorrer todo el hash
 	hash_iter_t* iter1 = hash_iter_crear(hash);
 	const char*ip1 = hash_iter_ver_actual(iter1);
 	char*linea1 = hash_obtener(hash,ip1);
@@ -260,7 +264,9 @@ void agregar_archivo(char*archivo){
 
 	int contador = 0;
 	while (hash_cantidad(hash) > contador){ 
+		//mientras los ip sean iguales comparo por tiempo
 		while(strcmp(ip1,ip2) == 0){
+			//si el tiempo es menor o igual a 2 seg aumento el cont dos y avanzo el iter2
 			if (fabs(difftime(tiempo1,tiempo2)) <= 2){
 				dos++;
 				if (dos == 5){
@@ -276,6 +282,7 @@ void agregar_archivo(char*archivo){
 				free_strv(registro2);
 				contador++;
 			}
+			//si el tiempo es mayor a 2 seg avanzo ambos iter
 			else{
 				hash_iter_avanzar(iter1);
 				ip1 = hash_iter_ver_actual(iter1);
@@ -285,6 +292,7 @@ void agregar_archivo(char*archivo){
 				free_strv(registro1);
 
 				hash_iter_avanzar(iter2);
+				//si el iter2 llego al final corto el ciclo
 				if(hash_iter_al_final(iter2))break;
 				ip2 = hash_iter_ver_actual(iter2);
 				linea2 = hash_iter_ver_actual_dato(iter2);
@@ -293,7 +301,9 @@ void agregar_archivo(char*archivo){
 				free_strv(registro2);
 			}
 		}
+		//si el iter2 llego al final salgo de la funcion
 		if(hash_iter_al_final(iter2))break;
+		//si los ip son diferentes es porque el iter1 sigue en la lista anterior
 		if (strcmp(ip1,ip2) != 0){ 
 			for(int i = 0; i < contador; i++){
 				hash_iter_avanzar(iter1);
@@ -305,7 +315,7 @@ void agregar_archivo(char*archivo){
 			}
 		}
 		contador = 0;
-		//caso de break
+		//caso de break, hay que avanzar a la proxima lista
 		while(strcmp(ip1,ip2) == 0){
 			hash_iter_avanzar(iter1);
 			ip1 = hash_iter_ver_actual(iter1);
@@ -314,7 +324,7 @@ void agregar_archivo(char*archivo){
 			ip2 = hash_iter_ver_actual(iter2);
 		}
 		dos = 1;
-		//cuando sale del while tengo que avanzar una posicion mas con ambos iter
+		//cuando salgo del while o del for tengo que avanzar una posicion mas con ambos iter
 		hash_iter_avanzar(iter1);
 		ip1 = hash_iter_ver_actual(iter1);
 		linea1 = hash_iter_ver_actual_dato(iter1);
@@ -330,16 +340,19 @@ void agregar_archivo(char*archivo){
 			tiempo2 = iso8601_to_time(registro2[1]);
 			free_strv(registro2); 
 		}
+		//si el iter2 ya llego al final salgo de la funcion
 		else break;
 	}
 	hash_iter_destruir(iter1);
 	hash_iter_destruir(iter2);
 	hash_destruir(hash);
+	printf("OK\n");
 }
 
 void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
 
 	abb_iter_t * iter = abb_iter_in_crear(abb);
+	//uso heap para imprimir los ip en orden
 	heap_t* heap = heap_crear(cmp2);
 
 	char**dess = split(desde,'.');
@@ -377,6 +390,7 @@ void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
 	free_strv(hass);
 	abb_iter_in_destruir(iter);
 	heap_destruir(heap,free);
+	printf("OK\n");
 }
 
 
@@ -384,6 +398,7 @@ int main(int argc, char*argv[]){
 
 	if (argc == 2){
 		size_t capacidad_maxima = atoi(argv[1]);
+		//el abb va a guardar los ip de todos los archivos agregados
 		abb_t* abb = abb_crear(comparacion3,free);
 		size_t cant = 0;
 		char*linea = NULL;
@@ -404,7 +419,6 @@ int main(int argc, char*argv[]){
 			}
 			if ( (strcmp(parametro1,"agregar_archivo") == 0)) {
 				agregar_archivo(parametro2);
-				printf("OK\n");
 				//abrir argv[2] sacar por split los ips y guardarlos en un abb
 				FILE* archivo = fopen(parametro2,"r");
 				if (!archivo){
@@ -448,11 +462,9 @@ int main(int argc, char*argv[]){
 						return 0;
 					}
 					ver_vistitantes(parametro2,parametro3,abb);
-					printf("OK\n");
 				}
 				if (strcmp(parametro1,"ordenar_archivo") == 0){
 					ordenar_archivo(parametro2,parametro3,capacidad_maxima);
-					printf("OK\n");
 				}
 			}
 			if ((strcmp(parametro1,"agregar_archivo") != 0) && (strcmp(parametro1,"ver_visitantes") != 0) && (strcmp(parametro1,"ordenar_archivo") != 0) ){
