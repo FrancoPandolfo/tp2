@@ -377,6 +377,7 @@ void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
 	free_strv(ips);
 	free_strv(dess);
 	free_strv(hass);
+	abb_iter_in_destruir(iter);
 	heap_destruir(heap,free);
 }
 
