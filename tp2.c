@@ -142,13 +142,12 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 		while( (cont < CANT_REGISTROS) && (leidos != -1)){
 			//null terminated
 			leidos = getline (&linea,&cant,entrada);
-			// HAY QUE LIBERAR TODA LA MEMORIA
 			if (leidos != -1){
 				heap_encolar(heap,linea);
 				cant_reg++;
 				cant_reg_aux++;
+				linea = NULL;
 			} 
-			linea = NULL;
 			cont++;
 		}
 		free(linea);
@@ -189,8 +188,10 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 		ssize_t leidos2 = 0;
    	 	while (leidos2 != -1){ 
    	 		leidos2 = getline (&linea2,&cant2,faux);
-    		if (leidos2 != -1) lista_insertar_ultimo(lista,linea2);
-    		linea2 = NULL;
+    		if (leidos2 != -1){ 
+    		 	lista_insertar_ultimo(lista,linea2);
+    		 	linea2 = NULL;
+    		 }
 		}
 		free(linea2);
 		while(!lista_esta_vacia(lista)){ 
@@ -224,11 +225,9 @@ void agregar_archivo(char*archivo){
 	char*linea = NULL;
 	ssize_t leidos = 0;
 	//null terminated
-	// HAY QUE LIBERAR TODA LA MEMORIA
 	while(leidos != -1){
 		leidos = getline (&linea,&cant,entrada);
 		if (leidos != -1){ 
-			// SPLIT HACE MALLOC
 			// hago un split a linea
 			char**registro = split(linea,'\t');
 			//guardo ip como clave y linea como dato
@@ -236,13 +235,13 @@ void agregar_archivo(char*archivo){
 			char*ip_guardar = registro[0];
 			hash_guardar(hash,ip_guardar,linea);
 			free_strv(registro);
+			linea = NULL;
 		}
-		linea = NULL;
 	} 
 	fclose(entrada);
 	free(linea);
 	int dos = 1;
-	//LIBERAR LOS SPLIT
+
 	hash_iter_t* iter1 = hash_iter_crear(hash);
 	const char*ip1 = hash_iter_ver_actual(iter1);
 	char*linea1 = hash_obtener(hash,ip1);
@@ -335,15 +334,11 @@ void agregar_archivo(char*archivo){
 	hash_destruir(hash);
 }
 
-//la hago con la idea de que recibe un heap con los ips
 void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
-	//FUNCION DE COMAPRACION2 FUNCIONA MAL
-	//ESTOY CREANDO UN heap_aux IGUAL A heap O SOLO ES UN PUNTERO?
-	//ES SOLO UN PUNTERO
+
 	abb_iter_t * iter = abb_iter_in_crear(abb);
 	heap_t* heap = heap_crear(cmp2);
-	//SPLIT HACE MALLOC
-	//LIBERAR LOS SPLIT
+
 	char**dess = split(desde,'.');
 	char**hass = split(hasta,'.');
 
@@ -382,8 +377,6 @@ void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
 }
 
 
-
-
 int main(int argc, char*argv[]){
 
 	if (argc == 2){
@@ -395,7 +388,6 @@ int main(int argc, char*argv[]){
 		char* parametro2;
 		char* parametro3;
 		while(true){ 
-			//MALLOC DE GETLINE Y SPLIT
 			getline (&linea,&cant,stdin);
 			char**lineas = split(linea,' ');
 			int cant_ing = strv_cant(lineas);
@@ -410,7 +402,7 @@ int main(int argc, char*argv[]){
 			if ( (strcmp(parametro1,"agregar_archivo") == 0)) {
 				agregar_archivo(parametro2);
 				printf("OK\n");
-				//abrir argv[2] sacar por split los ips y guardarlos en un heap
+				//abrir argv[2] sacar por split los ips y guardarlos en un abb
 				FILE* archivo = fopen(parametro2,"r");
 				size_t cant2 = 0;
 				char*linea2 = NULL;
@@ -418,13 +410,12 @@ int main(int argc, char*argv[]){
 				while (leidos != -1){
 					leidos = getline (&linea2,&cant2,archivo);
 					if (leidos != -1){ 
-						//SPLIT HACE MALLOC
 						char**string = split(linea2,'\t');
 						char*ip_guardar = string[0];
 						abb_guardar(abb,ip_guardar,NULL);
 						free_strv(string);
+						linea2 = NULL;
 					}
-					linea2 = NULL;
 				}
 				free(linea2);
 				fclose(archivo);
@@ -453,6 +444,6 @@ int main(int argc, char*argv[]){
 		}
 	}
 	else{
-		printf("cantidad parametros incorrecta\n");
+		fprintf(stderr, "%s %s\n", "Error en comando", argv[0]);
 	}
 }
