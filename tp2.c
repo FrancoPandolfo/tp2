@@ -232,7 +232,7 @@ void agregar_archivo(char*archivo){
 			// hago un split a linea
 			char**registro = split(linea,'\t');
 			//guardo ip como clave y linea como dato
-			//char*ip_guardar = malloc(sizeof(char) * strlen(registro[0]));
+			//en el hash se van a guardar todos los mismos ips en una misma linea. la clave es el ip y el dato el registro
 			char*ip_guardar = registro[0];
 			hash_guardar(hash,ip_guardar,linea);
 			free_strv(registro);
@@ -265,7 +265,7 @@ void agregar_archivo(char*archivo){
 				dos++;
 				if (dos == 5){
 					printf("DoS: %s\n",ip1);
-					dos = 0;
+					dos = 1;
 					break;
 				}
 				hash_iter_avanzar(iter2);
@@ -274,6 +274,7 @@ void agregar_archivo(char*archivo){
 				registro2 = split(linea2,'\t');
 				tiempo2 = iso8601_to_time(registro2[1]);
 				free_strv(registro2);
+				contador++;
 			}
 			else{
 				hash_iter_avanzar(iter1);
@@ -291,6 +292,17 @@ void agregar_archivo(char*archivo){
 				free_strv(registro2);
 			}
 		}
+		if (strcmp(ip1,ip2) != 0){ 
+			for(int i = 0; i < contador; i++){
+				hash_iter_avanzar(iter1);
+				ip1 = hash_iter_ver_actual(iter1);
+				linea1 = hash_iter_ver_actual_dato(iter1);
+				registro1 = split(linea1,'\t');
+				tiempo1 = iso8601_to_time(registro1[1]);
+				free_strv(registro1); 
+			}
+		}
+		contador = 0;
 		//caso de break
 		while(strcmp(ip1,ip2) == 0){
 			hash_iter_avanzar(iter1);
@@ -299,6 +311,7 @@ void agregar_archivo(char*archivo){
 			hash_iter_avanzar(iter2);
 			ip2 = hash_iter_ver_actual(iter2);
 		}
+		dos = 1;
 		//cuando sale del while tengo que avanzar una posicion mas con ambos iter
 		hash_iter_avanzar(iter1);
 		ip1 = hash_iter_ver_actual(iter1);
