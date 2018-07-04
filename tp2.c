@@ -414,6 +414,7 @@ int main(int argc, char*argv[]){
 						char*ip_guardar = string[0];
 						abb_guardar(abb,ip_guardar,NULL);
 						free_strv(string);
+						free(linea2);
 						linea2 = NULL;
 					}
 				}
