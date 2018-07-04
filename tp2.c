@@ -417,6 +417,13 @@ int main(int argc, char*argv[]){
 				parametro2 = lineas[1];
 				parametro3 = lineas[2];
 			}
+			if (cant_ing > 3){
+				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+				free(linea);
+				free_strv(lineas);
+				abb_destruir(abb);
+				return 0;
+			}
 			if ( (strcmp(parametro1,"agregar_archivo") == 0)) {
 				agregar_archivo(parametro2);
 				//abrir argv[2] sacar por split los ips y guardarlos en un abb
