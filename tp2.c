@@ -25,6 +25,7 @@
 #define TAM_MIN 25
 #define TAM_IP  16
 #define TAM_PRED 500
+#define MUCHO 100000
 
 typedef struct ordenamiento{
 	int arch;
@@ -241,20 +242,24 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	ssize_t leidos2 = 0;
 	size_t cant2 = 0;
 	char*linea2 = NULL;
+	int num_arch2 = num_arch;
 	//leo las primeras k lineas
-	for (int j = 0; j < CANT_REGISTROS; j++){
-		for(int k = 0; k < num_arch - 1; k++){ 
-   	 		leidos2 = getline (&linea2,&cant2,files[k]);
+	int j = 0;
+	while(j < CANT_REGISTROS){
+		for(int k = 0; k < num_arch2 - 1; k++){ 
+			leidos2 = getline (&linea2,&cant2,files[k]);
     		if (leidos2 != -1){
     			ordenamiento_t * orden = ordenamiento_crear(linea2,k);
     			heap_encolar(heap2,orden);
     			linea2 = NULL;
     		}
     		else{
+    			num_arch2--;
     			free(linea2);
     			linea2 = NULL;
     		}
 		}
+		j = j + num_arch2 - 1;
 	}
 
 	int k;
@@ -265,13 +270,15 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 			char*linea_aux = orden_aux->line;
 			fprintf(salida,"%s", linea_aux);
 			k = orden_aux->arch;
-			free(orden_aux);
+			orden_destruir(orden_aux);
 			leidos2 = getline (&linea2,&cant2,files[k]);
     		if (leidos2 != -1){
     			ordenamiento_t * orden = ordenamiento_crear(linea2,k);
-    			orden->arch = k;
-    			orden->line = linea2;
     			heap_encolar(heap2,orden);
+    			linea2 = NULL;
+    		}
+    		else{
+    			free(linea2);
     			linea2 = NULL;
     		}
 		}
