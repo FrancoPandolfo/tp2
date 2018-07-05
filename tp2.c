@@ -26,6 +26,28 @@
 #define TAM_IP  16
 #define TAM_PRED 500
 
+typedef struct ordenamiento{
+	int arch;
+	char* line;
+}ordenamiento_t;
+
+ordenamiento_t *ordenamiento_crear(char *line, int arch){
+	ordenamiento_t* orden = malloc(sizeof(ordenamiento_t));
+	if(!orden) return orden;
+	orden->arch = arch;
+	orden->line = line;
+	return orden;
+}
+
+void orden_destruir(ordenamiento_t*orden){
+	free(orden->line);
+	free(orden);
+}
+
+void destruir_orden(void*dato){
+	orden_destruir((ordenamiento_t*)dato);
+}
+
 
 time_t iso8601_to_time(const char* iso8601){
     struct tm bktime = { 0 };
@@ -113,6 +135,25 @@ int comparacion3(const char*linea1,const char*linea2){
 	return res_ip;
 }
 
+int cmp3(const void*a, const void *b){
+	ordenamiento_t* orden1 = (ordenamiento_t*)a;
+	ordenamiento_t* orden2 = (ordenamiento_t*)b;
+
+	char **strv_a = split(orden1->line, '\t');
+	char **strv_b = split(orden2->line, '\t');
+
+	int num_time = diff_time(strv_a[1], strv_b[1]);
+	int num_ip = diff_ip(strv_a[0], strv_b[0]);
+	int num_rec = -1*strcmp(strv_a[3], strv_b[3]);
+
+	free_strv(strv_a);
+	free_strv(strv_b);
+
+	if(num_time) return num_time;
+	if(num_ip) return num_ip;
+	return num_rec;
+}
+
 void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	//abro ambos archivos
 	FILE * entrada = fopen (archin,"r");
@@ -177,43 +218,76 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	}
 	fclose(entrada);
 	heap_destruir(heap,free);
-	lista_t* lista = lista_crear();
-	//por cada archivo auxliar lo abro, lo leo a una lista y lo escribo al archivo de salida
-	for (int i = 0; i <num_arch - 1; i++){
+	heap_t* heap2 = heap_crear(cmp3);
+	FILE* files[num_arch - 1];
+	int f = 0;
+	for (int i = 0; i < num_arch - 1; i++){
 		char filename[7];
     	sprintf(filename, "%d.txt", (i + 1));
-   	 	FILE*faux = fopen(filename, "r");
-   	 	if (!faux){
+   	 	files[i] = fopen(filename, "r");
+   	 	f++;
+   	 	if (!files[i]){
+   	 		if (f != 0){ 
+   	 			for (int j = f - 1; j > -1; j--){
+   	 				fclose(files[j]);
+   	 			}
+   	 		}
 			fclose(salida);
 			fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
 			return;
 		}
-		size_t cant2 = 0;
-		char*linea2 = NULL;
-		ssize_t leidos2 = 0;
-   	 	while (leidos2 != -1){ 
-   	 		leidos2 = getline (&linea2,&cant2,faux);
-    		if (leidos2 != -1){ 
-    		 	lista_insertar_ultimo(lista,linea2);
-    		 	linea2 = NULL;
-    		 }
-		}
-		free(linea2);
-		while(!lista_esta_vacia(lista)){ 
-			char*linea_aux = lista_borrar_primero(lista);
-			fprintf(salida,"%s", linea_aux);
-			free(linea_aux);
-		}
-		fclose(faux);
 	}
+
+	ssize_t leidos2 = 0;
+	size_t cant2 = 0;
+	char*linea2 = NULL;
+	//leo las primeras k lineas
+	for (int j = 0; j < CANT_REGISTROS; j++){
+		for(int k = 0; k < num_arch - 1; k++){ 
+   	 		leidos2 = getline (&linea2,&cant2,files[k]);
+    		if (leidos2 != -1){
+    			ordenamiento_t * orden = ordenamiento_crear(linea2,k);
+    			heap_encolar(heap2,orden);
+    			linea2 = NULL;
+    		}
+    		else{
+    			free(linea2);
+    			linea2 = NULL;
+    		}
+		}
+	}
+
+	int k;
+	for (int i = 0; i < cant_reg; i++){ 
+		if(!heap_esta_vacio(heap2)){ 
+			ordenamiento_t* orden_aux;
+			orden_aux = heap_desencolar(heap2);
+			char*linea_aux = orden_aux->line;
+			fprintf(salida,"%s", linea_aux);
+			k = orden_aux->arch;
+			free(orden_aux);
+			leidos2 = getline (&linea2,&cant2,files[k]);
+    		if (leidos2 != -1){
+    			ordenamiento_t * orden = ordenamiento_crear(linea2,k);
+    			orden->arch = k;
+    			orden->line = linea2;
+    			heap_encolar(heap2,orden);
+    			linea2 = NULL;
+    		}
+		}
+	}
+	free(linea2);
 	fclose(salida);
+	for (int i = 0; i < num_arch - 1; i++){
+		fclose(files[i]);
+	}
 	//borro archivos auxiliares
 	for (int i = 1; i < num_arch; i++){
 		char filename[7];
     	sprintf(filename, "%d.txt", i);
 		remove(filename);
 	}
-	lista_destruir(lista,free);
+	heap_destruir(heap2,destruir_orden);
 	printf("OK\n");
 }
 
