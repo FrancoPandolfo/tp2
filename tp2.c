@@ -385,7 +385,7 @@ void agregar_archivo(char*archivo){
 		//si el iter2 llego al final salgo de la funcion
 		if(hash_iter_al_final(iter2))break;
 		//si los ip son diferentes es porque el iter1 sigue en la lista anterior
-		if (strcmp(ip1,ip2) != 0){ 
+		/*if (strcmp(ip1,ip2) != 0){ 
 			for(int i = 0; i < contador; i++){
 				hash_iter_avanzar(iter1);
 				ip1 = hash_iter_ver_actual(iter1);
@@ -395,7 +395,7 @@ void agregar_archivo(char*archivo){
 				free_strv(registro1); 
 			}
 		}
-		contador = 0;
+		contador = 0;*/
 		//caso de break, hay que avanzar a la proxima lista
 		while(strcmp(ip1,ip2) == 0){
 			hash_iter_avanzar(iter1);
@@ -510,6 +510,13 @@ int main(int argc, char*argv[]){
 				return 0;
 			}
 			if ( (strcmp(parametro1,"agregar_archivo") == 0)) {
+				if (cant_ing > 2){
+					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+					free(linea);
+					free_strv(lineas);
+					abb_destruir(abb);
+					return 0;
+				}
 				agregar_archivo(parametro2);
 				//abrir argv[2] sacar por split los ips y guardarlos en un abb
 				FILE* archivo = fopen(parametro2,"r");
