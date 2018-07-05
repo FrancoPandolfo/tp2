@@ -412,10 +412,14 @@ int main(int argc, char*argv[]){
 			parametro1 = lineas[0];
 			if (cant_ing == 2){
 				parametro2 = lineas[1];
+				size_t len = strlen(lineas[1]);
+				parametro2[len - 1] = '\0';
 			}
 			if (cant_ing == 3){
 				parametro2 = lineas[1];
 				parametro3 = lineas[2];
+				size_t len = strlen(lineas[2]);
+				parametro3[len - 1] = '\0';
 			}
 			if (cant_ing > 3){
 				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
