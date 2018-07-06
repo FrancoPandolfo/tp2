@@ -98,7 +98,7 @@ campo_hash_t *campo_hash_buscar(lista_iter_t *iter, const char *clave){
 bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 	size_t pos = hashing(clave, hash->capacidad);
 	lista_iter_t *iter = lista_iter_crear(hash->tabla[pos]);
-	//if(!campo_hash_buscar(iter, clave)){
+	if(!campo_hash_buscar(iter, clave)){
 		campo_hash_t *campo = campo_hash_crear(clave, dato);
 		if(!campo){
 			lista_iter_destruir(iter);
@@ -109,13 +109,13 @@ bool hash_guardar(hash_t *hash, const char *clave, void *dato){
 		}
 		lista_iter_insertar(iter, campo);
 		hash->cantidad++;
-	/*}else{;
+	}else{;
 		campo_hash_t *campo = lista_iter_ver_actual(iter);
 		if(hash->hash_destruir_dato!=NULL){
 			hash->hash_destruir_dato(campo->dato);
 		} 
 		campo->dato = dato;
-	}*/
+	}
 	if(hash->cantidad / hash->capacidad == FACTOR_CARGA){
 		rehashing(hash);
 	}
@@ -218,11 +218,6 @@ bool hash_iter_avanzar(hash_iter_t *iter){
 const char *hash_iter_ver_actual(const hash_iter_t *iter){
 	if(hash_iter_al_final(iter)) return NULL;
 	return ((campo_hash_t *)lista_iter_ver_actual(iter->lista_iter))->clave;
-}
-
-void *hash_iter_ver_actual_dato(const hash_iter_t *iter){
-	if(hash_iter_al_final(iter)) return NULL;
-	return ((campo_hash_t *)lista_iter_ver_actual(iter->lista_iter))->dato;
 }
 
 bool hash_iter_al_final(const hash_iter_t *iter){
