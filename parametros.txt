@@ -1,0 +1,3 @@
+ordenar_archivo access002.log access002-ordenado.log
+agregar_archivo access002-ordenado.log
+ver_visitantes 120.00.00.00 130.00.00.00
