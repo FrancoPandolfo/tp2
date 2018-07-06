@@ -303,6 +303,7 @@ void agregar_archivo(char*archivo){
 	} 
 	//en el hash se van a guardar todos los mismos ips en una misma posicion/lista. 
 	hash_t* hash = hash_crear(free);
+	heap_t*heap = heap_crear(cmp2);
 
 	size_t cant = 0;
 	char*linea = NULL;
@@ -347,13 +348,18 @@ void agregar_archivo(char*archivo){
 			if (fabs(difftime(tiempo1,tiempo2)) <= 2){
 				dos++;
 				if (dos == 5){
-					printf("DoS: %s\n",ip1);
+					heap_encolar(heap,(char*)ip1);
 				}
 				hash_iter_avanzar(iter2);
 				if(hash_iter_al_final(iter2)){
 					hash_iter_destruir(iter1);
 					hash_iter_destruir(iter2);
+					while(!heap_esta_vacio(heap)){
+						char*ip = heap_desencolar(heap);
+						printf("DoS: %s\n",ip);
+					}
 					hash_destruir(hash);
+					heap_destruir(heap,free);
 					printf("OK\n");
 					return;
 				}
@@ -378,7 +384,12 @@ void agregar_archivo(char*archivo){
 				if(hash_iter_al_final(iter2)){
 					hash_iter_destruir(iter1);
 					hash_iter_destruir(iter2);
+					while(!heap_esta_vacio(heap)){
+						char*ip = heap_desencolar(heap);
+						printf("DoS: %s\n",ip);
+					}
 					hash_destruir(hash);
+					heap_destruir(heap,free);
 					printf("OK\n");
 					return;
 				}
@@ -393,7 +404,12 @@ void agregar_archivo(char*archivo){
 		if(hash_iter_al_final(iter2)){
 			hash_iter_destruir(iter1);
 			hash_iter_destruir(iter2);
+			while(!heap_esta_vacio(heap)){
+				char*ip = heap_desencolar(heap);
+				printf("DoS: %s\n",ip);
+			}
 			hash_destruir(hash);
+			heap_destruir(heap,free);
 			printf("OK\n");
 			return;
 		}
@@ -440,14 +456,24 @@ void agregar_archivo(char*archivo){
 		else{
 			hash_iter_destruir(iter1);
 			hash_iter_destruir(iter2);
+			while(!heap_esta_vacio(heap)){
+				char*ip = heap_desencolar(heap);
+				printf("DoS: %s\n",ip);
+			}
 			hash_destruir(hash);
+			heap_destruir(heap,free);
 			printf("OK\n");
 			return;
 		}
 	}
 	hash_iter_destruir(iter1);
 	hash_iter_destruir(iter2);
+	while(!heap_esta_vacio(heap)){
+		char*ip = heap_desencolar(heap);
+		printf("DoS: %s\n",ip);
+	}
 	hash_destruir(hash);
+	heap_destruir(heap,free);
 	printf("OK\n");
 }
 
