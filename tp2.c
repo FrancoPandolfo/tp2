@@ -159,13 +159,13 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	//abro ambos archivos
 	FILE * entrada = fopen (archin,"r");
 	if (!entrada){
-		fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
+		fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo");
 		return;
 	} 
 	FILE * salida = fopen (archout,"w");
 	if (!salida){
 		fclose(entrada);
-		fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
+		fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo");
 		return;
 	}
 
@@ -234,7 +234,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
    	 			}
    	 		}
 			fclose(salida);
-			fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
+			fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo");
 			return;
 		}
 	}
@@ -298,7 +298,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 void agregar_archivo(char*archivo){
 	FILE * entrada = fopen (archivo,"r");
 	if (!entrada){
-		fprintf(stderr, "%s %s\n", "Error en comando", "agregar_archivo");
+		fprintf(stderr, "%s %s", "Error en comando", "agregar_archivo");
 		return;
 	} 
 	//en el hash se van a guardar todos los mismos ips en una misma posicion/lista. 
@@ -342,22 +342,27 @@ void agregar_archivo(char*archivo){
 	int contador = 0;
 	while (hash_cantidad(hash) > contador){ 
 		//mientras los ip sean iguales comparo por tiempo
-		while(strcmp(ip1,ip2) == 0){
+		while((strcmp(ip1,ip2) == 0)){
 			//si el tiempo es menor o igual a 2 seg aumento el cont dos y avanzo el iter2
 			if (fabs(difftime(tiempo1,tiempo2)) <= 2){
 				dos++;
 				if (dos == 5){
 					printf("DoS: %s\n",ip1);
-					dos = 1;
-					break;
 				}
 				hash_iter_avanzar(iter2);
+				if(hash_iter_al_final(iter2)){
+					hash_iter_destruir(iter1);
+					hash_iter_destruir(iter2);
+					hash_destruir(hash);
+					printf("OK\n");
+					return;
+				}
 				ip2 = hash_iter_ver_actual(iter2);
 				linea2 = hash_iter_ver_actual_dato(iter2);
 				registro2 = split(linea2,'\t');
 				tiempo2 = iso8601_to_time(registro2[1]);
 				free_strv(registro2);
-				contador++;
+				if (dos < 6) contador++;
 			}
 			//si el tiempo es mayor a 2 seg avanzo ambos iter
 			else{
@@ -370,7 +375,13 @@ void agregar_archivo(char*archivo){
 
 				hash_iter_avanzar(iter2);
 				//si el iter2 llego al final corto el ciclo
-				if(hash_iter_al_final(iter2))break;
+				if(hash_iter_al_final(iter2)){
+					hash_iter_destruir(iter1);
+					hash_iter_destruir(iter2);
+					hash_destruir(hash);
+					printf("OK\n");
+					return;
+				}
 				ip2 = hash_iter_ver_actual(iter2);
 				linea2 = hash_iter_ver_actual_dato(iter2);
 				registro2 = split(linea2,'\t');
@@ -379,46 +390,60 @@ void agregar_archivo(char*archivo){
 			}
 		}
 		//si el iter2 llego al final salgo de la funcion
-		if(hash_iter_al_final(iter2))break;
+		if(hash_iter_al_final(iter2)){
+			hash_iter_destruir(iter1);
+			hash_iter_destruir(iter2);
+			hash_destruir(hash);
+			printf("OK\n");
+			return;
+		}
 		//si los ip son diferentes es porque el iter1 sigue en la lista anterior
-		/*if (strcmp(ip1,ip2) != 0){ 
+		//hash_iter_avanzar(iter2);
+		//ip2 = hash_iter_ver_actual(iter2);
+		//if(hash_iter_al_final(iter2))break;
+		if (strcmp(ip1,ip2) != 0){ 
 			for(int i = 0; i < contador; i++){
 				hash_iter_avanzar(iter1);
 				ip1 = hash_iter_ver_actual(iter1);
-				linea1 = hash_iter_ver_actual_dato(iter1);
-				registro1 = split(linea1,'\t');
-				tiempo1 = iso8601_to_time(registro1[1]);
-				free_strv(registro1); 
 			}
+			contador = 0;
 		}
-		contador = 0;*/
 		//caso de break, hay que avanzar a la proxima lista
-		while(!hash_iter_al_final(iter1) && !hash_iter_al_final(iter2) && strcmp(ip1,ip2) == 0){
+		/*while(!hash_iter_al_final(iter1) && !hash_iter_al_final(iter2) && strcmp(ip1,ip2) == 0){
 			hash_iter_avanzar(iter1);
 			ip1 = hash_iter_ver_actual(iter1);
 
 			hash_iter_avanzar(iter2);
 			ip2 = hash_iter_ver_actual(iter2);
-		}
+		}*/
 		dos = 1;
 		//cuando salgo del while o del for tengo que avanzar una posicion mas con ambos iter
 		hash_iter_avanzar(iter1);
+		//if (!hash_iter_al_final(iter1))break;
 		ip1 = hash_iter_ver_actual(iter1);
 		linea1 = hash_iter_ver_actual_dato(iter1);
-		registro1 = split(linea1,'\t');
-		tiempo1 = iso8601_to_time(registro1[1]);
-		free_strv(registro1);
+		if (linea1){ 
+			registro1 = split(linea1,'\t');
+			tiempo1 = iso8601_to_time(registro1[1]);
+			free_strv(registro1);
+		}
 
 		hash_iter_avanzar(iter2);
 		if (!hash_iter_al_final(iter2)){ 
-			ip2 = hash_iter_ver_actual(iter2);
 			linea2 = hash_iter_ver_actual_dato(iter2);
 			registro2 = split(linea2,'\t');
 			tiempo2 = iso8601_to_time(registro2[1]);
 			free_strv(registro2); 
+			ip2 = hash_iter_ver_actual(iter2);
 		}
 		//si el iter2 ya llego al final salgo de la funcion
-		else break;
+		else{
+			hash_iter_destruir(iter1);
+			hash_iter_destruir(iter2);
+			hash_destruir(hash);
+			printf("OK\n");
+			return;
+		}
 	}
 	hash_iter_destruir(iter1);
 	hash_iter_destruir(iter2);
@@ -499,7 +524,7 @@ int main(int argc, char*argv[]){
 				parametro3[len - 1] = '\0';
 			}
 			if (cant_ing > 3){
-				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+				fprintf(stderr, "%s %s", "Error en comando", parametro1);
 				free(linea);
 				free_strv(lineas);
 				abb_destruir(abb);
@@ -507,7 +532,7 @@ int main(int argc, char*argv[]){
 			}
 			if ( (strcmp(parametro1,"agregar_archivo") == 0)) {
 				if (cant_ing > 2){
-					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+					fprintf(stderr, "%s %s", "Error en comando", parametro1);
 					free(linea);
 					free_strv(lineas);
 					abb_destruir(abb);
@@ -542,7 +567,7 @@ int main(int argc, char*argv[]){
 
 			else if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
 				if (cant_ing < 3){
-					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+					fprintf(stderr, "%s %s", "Error en comando", parametro1);
 					free(linea);
 					free_strv(lineas);
 					abb_destruir(abb);
@@ -550,7 +575,7 @@ int main(int argc, char*argv[]){
 				}
 				if (strcmp(parametro1,"ver_visitantes") == 0){
 					if (abb_cantidad(abb) == 0){
-						fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+						fprintf(stderr, "%s %s", "Error en comando", parametro1);
 						free(linea);
 						free_strv(lineas);
 						abb_destruir(abb);
@@ -563,7 +588,7 @@ int main(int argc, char*argv[]){
 				}
 			}
 			else {
-				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
+				fprintf(stderr, "%s %s", "Error en comando", parametro1);
 				free(linea);
 				free_strv(lineas);
 				abb_destruir(abb);
@@ -575,6 +600,6 @@ int main(int argc, char*argv[]){
 		}
 	}
 	else{
-		fprintf(stderr, "%s %s\n", "Error en comando", argv[0]);
+		fprintf(stderr, "%s %s", "Error en comando", argv[0]);
 	}
 }
