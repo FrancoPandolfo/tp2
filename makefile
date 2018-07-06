@@ -11,10 +11,11 @@ $(EXEC): $(OBJFILES)
 	$(CC) $(CFLAGS) $(OBJFILES) -o $(EXEC)
 all: $(EXEC)
 
-run: $(EXEC) clear
-	./$(EXEC)
+run: all clear
+	./$(EXEC) 400 < parametros.txt
+
 valgrind: all clear
-	valgrind $(VFLAGS) ./$(EXEC)
+	valgrind $(VFLAGS) ./$(EXEC) 400 < parametros.txt
 gdb: $(EXEC) clear
 	gdb $(GFLAGS) ./$(EXEC)
 free: $(OBJFILES)
