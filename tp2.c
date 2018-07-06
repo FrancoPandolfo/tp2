@@ -159,13 +159,13 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	//abro ambos archivos
 	FILE * entrada = fopen (archin,"r");
 	if (!entrada){
-		fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo");
+		fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo\n");
 		return;
 	} 
 	FILE * salida = fopen (archout,"w");
 	if (!salida){
 		fclose(entrada);
-		fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo");
+		fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo\n");
 		return;
 	}
 
@@ -234,7 +234,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
    	 			}
    	 		}
 			fclose(salida);
-			fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo");
+			fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo\n");
 			return;
 		}
 	}
@@ -298,7 +298,7 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 void agregar_archivo(char*archivo){
 	FILE * entrada = fopen (archivo,"r");
 	if (!entrada){
-		fprintf(stderr, "%s %s", "Error en comando", "agregar_archivo");
+		fprintf(stderr, "%s %s", "Error en comando", "agregar_archivo\n");
 		return;
 	} 
 	//en el hash se van a guardar todos los mismos ips en una misma posicion/lista. 
@@ -550,7 +550,7 @@ int main(int argc, char*argv[]){
 				parametro3[len - 1] = '\0';
 			}
 			if (cant_ing > 3){
-				fprintf(stderr, "%s %s", "Error en comando", parametro1);
+				fprintf(stderr, "%s %s%c", "Error en comando", parametro1,'\n');
 				free(linea);
 				free_strv(lineas);
 				abb_destruir(abb);
@@ -558,7 +558,7 @@ int main(int argc, char*argv[]){
 			}
 			if ( (strcmp(parametro1,"agregar_archivo") == 0)) {
 				if (cant_ing > 2){
-					fprintf(stderr, "%s %s", "Error en comando", parametro1);
+					fprintf(stderr, "%s %s%c", "Error en comando", parametro1,'\n');
 					free(linea);
 					free_strv(lineas);
 					abb_destruir(abb);
@@ -593,7 +593,7 @@ int main(int argc, char*argv[]){
 
 			else if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
 				if (cant_ing < 3){
-					fprintf(stderr, "%s %s", "Error en comando", parametro1);
+					fprintf(stderr, "%s %s%c", "Error en comando", parametro1,'\n');
 					free(linea);
 					free_strv(lineas);
 					abb_destruir(abb);
@@ -601,7 +601,7 @@ int main(int argc, char*argv[]){
 				}
 				if (strcmp(parametro1,"ver_visitantes") == 0){
 					if (abb_cantidad(abb) == 0){
-						fprintf(stderr, "%s %s", "Error en comando", parametro1);
+						fprintf(stderr, "%s %s%c", "Error en comando", parametro1,'\n');
 						free(linea);
 						free_strv(lineas);
 						abb_destruir(abb);
@@ -626,6 +626,6 @@ int main(int argc, char*argv[]){
 		}
 	}
 	else{
-		fprintf(stderr, "%s %s", "Error en comando", argv[0]);
+		fprintf(stderr, "%s %s%c", "Error en comando", argv[0],'\n');
 	}
 }
