@@ -244,22 +244,18 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	char*linea2 = NULL;
 	int num_arch2 = num_arch;
 	//leo las primeras k lineas
-	int j = 0;
-	while(j < CANT_REGISTROS){
-		for(int k = 0; k < num_arch2 - 1; k++){ 
-			leidos2 = getline (&linea2,&cant2,files[k]);
-    		if (leidos2 != -1){
-    			ordenamiento_t * orden = ordenamiento_crear(linea2,k);
-    			heap_encolar(heap2,orden);
-    			linea2 = NULL;
-    		}
-    		else{
-    			num_arch2--;
-    			free(linea2);
-    			linea2 = NULL;
-    		}
-		}
-		j = j + num_arch2 - 1;
+	for(int k = 0; k < num_arch2 - 1; k++){ 
+		leidos2 = getline (&linea2,&cant2,files[k]);
+    	if (leidos2 != -1){
+    		ordenamiento_t * orden = ordenamiento_crear(linea2,k);
+    		heap_encolar(heap2,orden);
+    		linea2 = NULL;
+    	}
+    	else{
+    		num_arch2--;
+    		free(linea2);
+    		linea2 = NULL;
+    	}
 	}
 
 	int k;
@@ -397,7 +393,7 @@ void agregar_archivo(char*archivo){
 		}
 		contador = 0;*/
 		//caso de break, hay que avanzar a la proxima lista
-		while(strcmp(ip1,ip2) == 0){
+		while(!hash_iter_al_final(iter1) && !hash_iter_al_final(iter2) && strcmp(ip1,ip2) == 0){
 			hash_iter_avanzar(iter1);
 			ip1 = hash_iter_ver_actual(iter1);
 
@@ -483,11 +479,11 @@ int main(int argc, char*argv[]){
 		abb_t* abb = abb_crear(comparacion3,free);
 		size_t cant = 0;
 		char*linea = NULL;
+		ssize_t leidos_stdin;
 		char* parametro1;
 		char* parametro2;
 		char* parametro3;
-		while(true){ 
-			getline (&linea,&cant,stdin);
+		while((leidos_stdin = getline (&linea,&cant,stdin)) > 0){ 
 			char**lineas = split(linea,' ');
 			int cant_ing = strv_cant(lineas);
 			parametro1 = lineas[0];
@@ -544,7 +540,7 @@ int main(int argc, char*argv[]){
 				fclose(archivo);
 			}
 
-			if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
+			else if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
 				if (cant_ing < 3){
 					fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
 					free(linea);
@@ -566,7 +562,7 @@ int main(int argc, char*argv[]){
 					ordenar_archivo(parametro2,parametro3,capacidad_maxima);
 				}
 			}
-			if ((strcmp(parametro1,"agregar_archivo") != 0) && (strcmp(parametro1,"ver_visitantes") != 0) && (strcmp(parametro1,"ordenar_archivo") != 0) ){
+			else {
 				fprintf(stderr, "%s %s\n", "Error en comando", parametro1);
 				free(linea);
 				free_strv(lineas);
