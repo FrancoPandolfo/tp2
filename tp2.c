@@ -294,6 +294,10 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	printf("OK\n");
 }
 
+/*************************************************************
+ *					Bloque agregar archivo 					 *
+ *************************************************************/
+
 char *linea_obtener(FILE *archivo){
 	char *linea = NULL;
 	size_t capacidad;
