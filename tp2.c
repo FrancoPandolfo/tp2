@@ -159,13 +159,13 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	//abro ambos archivos
 	FILE * entrada = fopen (archin,"r");
 	if (!entrada){
-		fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo\n");
+		fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
 		return;
 	} 
 	FILE * salida = fopen (archout,"w");
 	if (!salida){
 		fclose(entrada);
-		fprintf(stderr, "%s %s", "Error en comando", "ordenar_archivo\n");
+		fprintf(stderr, "%s %s\n", "Error en comando", "ordenar_archivo");
 		return;
 	}
 
@@ -353,9 +353,10 @@ int ip_cmp_aux(const char *ip_a, const char *ip_b){
 
 void agregar_archivo(char *ruta){
 	FILE *archivo = fopen(ruta, "r");
-	if(!archivo){
-		fprintf(stderr, "%s %s", "Error en comando", "agregar_archivo\n");
-	}
+	if (!archivo){
+		fprintf(stderr, "%s %s\n", "Error en comando", "agregar_archivo");
+		return;
+	} 
 
 	/*	Declaro los TDAs a utilizar	*/
 	hash_t *hash = hash_crear(free_lista);
@@ -535,6 +536,14 @@ int main(int argc, char*argv[]){
 				}
 				if (strcmp(parametro1,"ordenar_archivo") == 0){
 					ordenar_archivo(parametro2,parametro3,capacidad_maxima);
+					FILE* archivo = fopen(parametro2,"r");
+					if (!archivo){
+						free(linea);
+						free_strv(lineas);
+						abb_destruir(abb);
+						return 0;
+					}
+					else fclose(archivo);
 				}
 			}
 			else {
