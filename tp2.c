@@ -295,186 +295,110 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 }
 
 
-void agregar_archivo(char*archivo){
-	FILE * entrada = fopen (archivo,"r");
-	if (!entrada){
-		fprintf(stderr, "%s %s", "Error en comando", "agregar_archivo\n");
-		return;
-	} 
-	//en el hash se van a guardar todos los mismos ips en una misma posicion/lista. 
-	hash_t* hash = hash_crear(free);
-	heap_t*heap = heap_crear(cmp2);
-
-	size_t cant = 0;
-	char*linea = NULL;
-	ssize_t leidos = 0;
-	//null terminated
-	while(leidos != -1){
-		leidos = getline (&linea,&cant,entrada);
-		if (leidos != -1){ 
-			// hago un split a linea
-			char**registro = split(linea,'\t');
-			//guardo ip como clave y linea como dato
-			char*ip_guardar = registro[0];
-			hash_guardar(hash,ip_guardar,linea);
-			free_strv(registro);
-			linea = NULL;
-		}
-	} 
-	fclose(entrada);
-	free(linea);
-	int dos = 1;
-	//creo dos iteradores para recorrer todo el hash
-	hash_iter_t* iter1 = hash_iter_crear(hash);
-	const char*ip1 = hash_iter_ver_actual(iter1);
-	char*linea1 = hash_obtener(hash,ip1);
-	char**registro1 = split(linea1,'\t');
-	time_t tiempo1 = iso8601_to_time(registro1[1]);
-	free_strv(registro1);
-
-	hash_iter_t* iter2 = hash_iter_crear(hash);
-	hash_iter_avanzar(iter2);
-	const char*ip2 = hash_iter_ver_actual(iter2);
-	char*linea2 = hash_iter_ver_actual_dato(iter2);
-	char**registro2 = split(linea2,'\t');
-	time_t tiempo2 = iso8601_to_time(registro2[1]);
-	free_strv(registro2);
-
-	int contador = 0;
-	while (hash_cantidad(hash) > contador){ 
-		//mientras los ip sean iguales comparo por tiempo
-		while((strcmp(ip1,ip2) == 0)){
-			//si el tiempo es menor o igual a 2 seg aumento el cont dos y avanzo el iter2
-			if (fabs(difftime(tiempo1,tiempo2)) <= 2){
-				dos++;
-				if (dos == 5){
-					heap_encolar(heap,(char*)ip1);
-				}
-				hash_iter_avanzar(iter2);
-				if(hash_iter_al_final(iter2)){
-					hash_iter_destruir(iter1);
-					hash_iter_destruir(iter2);
-					while(!heap_esta_vacio(heap)){
-						char*ip = heap_desencolar(heap);
-						printf("DoS: %s\n",ip);
-					}
-					hash_destruir(hash);
-					heap_destruir(heap,free);
-					printf("OK\n");
-					return;
-				}
-				ip2 = hash_iter_ver_actual(iter2);
-				linea2 = hash_iter_ver_actual_dato(iter2);
-				registro2 = split(linea2,'\t');
-				tiempo2 = iso8601_to_time(registro2[1]);
-				free_strv(registro2);
-				if (dos < 6) contador++;
-			}
-			//si el tiempo es mayor a 2 seg avanzo ambos iter
-			else{
-				hash_iter_avanzar(iter1);
-				ip1 = hash_iter_ver_actual(iter1);
-				linea1 = hash_iter_ver_actual_dato(iter1);
-				registro1 = split(linea1,'\t');
-				tiempo1 = iso8601_to_time(registro1[1]);
-				free_strv(registro1);
-
-				hash_iter_avanzar(iter2);
-				//si el iter2 llego al final corto el ciclo
-				if(hash_iter_al_final(iter2)){
-					hash_iter_destruir(iter1);
-					hash_iter_destruir(iter2);
-					while(!heap_esta_vacio(heap)){
-						char*ip = heap_desencolar(heap);
-						printf("DoS: %s\n",ip);
-					}
-					hash_destruir(hash);
-					heap_destruir(heap,free);
-					printf("OK\n");
-					return;
-				}
-				ip2 = hash_iter_ver_actual(iter2);
-				linea2 = hash_iter_ver_actual_dato(iter2);
-				registro2 = split(linea2,'\t');
-				tiempo2 = iso8601_to_time(registro2[1]);
-				free_strv(registro2);
-			}
-		}
-		//si el iter2 llego al final salgo de la funcion
-		if(hash_iter_al_final(iter2)){
-			hash_iter_destruir(iter1);
-			hash_iter_destruir(iter2);
-			while(!heap_esta_vacio(heap)){
-				char*ip = heap_desencolar(heap);
-				printf("DoS: %s\n",ip);
-			}
-			hash_destruir(hash);
-			heap_destruir(heap,free);
-			printf("OK\n");
-			return;
-		}
-		//si los ip son diferentes es porque el iter1 sigue en la lista anterior
-		//hash_iter_avanzar(iter2);
-		//ip2 = hash_iter_ver_actual(iter2);
-		//if(hash_iter_al_final(iter2))break;
-		if (strcmp(ip1,ip2) != 0){ 
-			for(int i = 0; i < contador; i++){
-				hash_iter_avanzar(iter1);
-				ip1 = hash_iter_ver_actual(iter1);
-			}
-			contador = 0;
-		}
-		//caso de break, hay que avanzar a la proxima lista
-		/*while(!hash_iter_al_final(iter1) && !hash_iter_al_final(iter2) && strcmp(ip1,ip2) == 0){
-			hash_iter_avanzar(iter1);
-			ip1 = hash_iter_ver_actual(iter1);
-
-			hash_iter_avanzar(iter2);
-			ip2 = hash_iter_ver_actual(iter2);
-		}*/
-		dos = 1;
-		//cuando salgo del while o del for tengo que avanzar una posicion mas con ambos iter
-		hash_iter_avanzar(iter1);
-		//if (!hash_iter_al_final(iter1))break;
-		ip1 = hash_iter_ver_actual(iter1);
-		linea1 = hash_iter_ver_actual_dato(iter1);
-		if (linea1){ 
-			registro1 = split(linea1,'\t');
-			tiempo1 = iso8601_to_time(registro1[1]);
-			free_strv(registro1);
-		}
-
-		hash_iter_avanzar(iter2);
-		if (!hash_iter_al_final(iter2)){ 
-			linea2 = hash_iter_ver_actual_dato(iter2);
-			registro2 = split(linea2,'\t');
-			tiempo2 = iso8601_to_time(registro2[1]);
-			free_strv(registro2); 
-			ip2 = hash_iter_ver_actual(iter2);
-		}
-		//si el iter2 ya llego al final salgo de la funcion
-		else{
-			hash_iter_destruir(iter1);
-			hash_iter_destruir(iter2);
-			while(!heap_esta_vacio(heap)){
-				char*ip = heap_desencolar(heap);
-				printf("DoS: %s\n",ip);
-			}
-			hash_destruir(hash);
-			heap_destruir(heap,free);
-			printf("OK\n");
-			return;
-		}
+char *linea_obtener(FILE *archivo){
+	char *linea = NULL;
+	size_t capacidad = 0;
+	if(getline(&linea, &capacidad, archivo) == -1){
+		free(linea);
+		return NULL;
 	}
-	hash_iter_destruir(iter1);
-	hash_iter_destruir(iter2);
-	while(!heap_esta_vacio(heap)){
-		char*ip = heap_desencolar(heap);
-		printf("DoS: %s\n",ip);
+	return linea;
+}
+
+void free_lista(void *dato){
+	lista_t *lista = (lista_t *)dato;
+	lista_destruir(lista, free);
+}
+
+/*	Determina si en lista pasada con clave ocurre DoS	*/
+bool DoS(lista_t *lista){
+	lista_iter_t *iter = lista_iter_crear(lista);
+	lista_iter_t *iter_movil = lista_iter_crear(lista);
+
+	/*	Posiciono el iter móvil	*/
+	for(size_t i = 0; i < 4; i++){
+		lista_iter_avanzar(iter_movil);
 	}
-	hash_destruir(hash);
-	heap_destruir(heap,free);
+
+	/*	Evalúo si hay DoS	*/
+	bool ok = false;
+	while(!lista_iter_al_final(iter_movil)){
+		time_t tiempo_a = iso8601_to_time((char *)lista_iter_ver_actual(iter));
+		time_t tiempo_b = iso8601_to_time((char *)lista_iter_ver_actual(iter_movil));
+		ok = fabs(difftime(tiempo_a, tiempo_b)) <= 2;		
+		if(ok) break;
+		lista_iter_avanzar(iter);
+		lista_iter_avanzar(iter_movil);
+	}
+	lista_iter_destruir(iter);
+	lista_iter_destruir(iter_movil);
+	return ok;
+}
+
+bool ip_mostrar(const char *clave, void *dato, void *extra){
+	//if(!clave) return false;
+	fprintf(stdout, "DoS: %s\n", clave);
+	return true;
+}
+
+void reporte_DoS(abb_t *arbol){
+	abb_in_order(arbol, ip_mostrar, NULL);
 	printf("OK\n");
+}
+
+/*	Función auxiliar para comparar dentro del abb	*/
+int ip_cmp_aux(const char *ip_a, const char *ip_b){
+	return diff_ip((char *)ip_b, (char *)ip_a);
+}
+
+void agregar_archivo(char *ruta){
+	FILE *archivo = fopen(ruta, "r");
+	if(!archivo){
+		fprintf(stderr, "%s %s", "Error en comando", "agregar_archivo\n");
+	}
+
+	/*	Declaro los TDAs a utilizar	*/
+	hash_t *hash = hash_crear(free_lista);
+	abb_t *arbol = abb_crear(ip_cmp_aux, free);
+
+	/*	Usamos las IPs como claves del hash	*/
+	while(!feof(archivo)){
+		char *linea = linea_obtener(archivo);
+		if(linea){
+			char **linea_strv = split(linea, '\t');
+			char *ip = linea_strv[0];
+			char *tiempo = linea_strv[1];
+
+			if(!hash_pertenece(hash, ip)){
+				lista_t *lista = lista_crear();
+				hash_guardar(hash, ip, lista);
+			}
+			lista_t *lista = hash_obtener(hash, ip);
+			lista_insertar_ultimo(lista, strdup(tiempo));
+			free_strv(linea_strv);
+		}
+		free(linea);
+	}
+
+	/*	Chequeo por cada clave, si hay DoS	*/
+	hash_iter_t *iter = hash_iter_crear(hash);
+
+	while(!hash_iter_al_final(iter)){
+		char *ip = (char *)hash_iter_ver_actual(iter);
+		lista_t *lista = (lista_t *)hash_obtener(hash, ip);
+		if(DoS(lista)){
+			abb_guardar(arbol, ip, NULL);
+		}
+		hash_iter_avanzar(iter);
+	}
+
+	reporte_DoS(arbol);
+
+	/*	Cierro archivo y borro datos de estructuras auxiliares	*/
+	fclose(archivo);
+	hash_iter_destruir(iter);
+	hash_destruir(hash);
+	abb_destruir(arbol);
 }
 
 void ver_vistitantes(char* desde, char* hasta, abb_t* abb){
