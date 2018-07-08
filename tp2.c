@@ -451,7 +451,7 @@ int main(int argc, char*argv[]){
 	if (argc == 2){
 		size_t capacidad_maxima = atoi(argv[1]);
 		//el abb va a guardar los ip de todos los archivos agregados
-		abb_t* abb = abb_crear(comparacion3,free);
+		abb_t* abb = abb_crear(comparacion3,NULL);
 		size_t cant = 0;
 		char*linea = NULL;
 		ssize_t leidos_stdin;
@@ -513,6 +513,9 @@ int main(int argc, char*argv[]){
 				}
 				free(linea2);
 				fclose(archivo);
+				free_strv(lineas);
+				free(linea);
+				linea = NULL;
 			}
 
 			else if ( (strcmp(parametro1,"ver_visitantes") == 0) || (strcmp(parametro1,"ordenar_archivo") == 0) ){ 
@@ -544,6 +547,9 @@ int main(int argc, char*argv[]){
 					}
 					else fclose(archivo);
 				}
+				free_strv(lineas);
+				free(linea);
+				linea = NULL;
 			}
 			else {
 				fprintf(stderr, "%s %s", "Error en comando", parametro1);
@@ -552,10 +558,9 @@ int main(int argc, char*argv[]){
 				abb_destruir(abb);
 				return 0;
 			}
-			free_strv(lineas);
-			free(linea);
-			linea = NULL;
 		}
+		free(linea);
+		abb_destruir(abb);
 	}
 	else{
 		fprintf(stderr, "%s %s%c", "Error en comando", argv[0],'\n');
