@@ -179,7 +179,6 @@ void ordenar_archivo(char* archin, char *archout, size_t capacidad){
 	int num_arch = 1; //numero de archivos auxiliares
 	int cant_reg_aux = 0; //cantidad de registros por iteracion
 	int cant_reg = 0; //cantidad registros totales
-
 	while (leidos != -1){
 		//leo y guardo en heap de minimos
 		while( (cont < CANT_REGISTROS) && (leidos != -1)){
@@ -325,7 +324,7 @@ bool DoS(lista_t *lista){
 	while(!lista_iter_al_final(iter_movil)){
 		time_t tiempo_a = iso8601_to_time((char *)lista_iter_ver_actual(iter));
 		time_t tiempo_b = iso8601_to_time((char *)lista_iter_ver_actual(iter_movil));
-		ok = fabs(difftime(tiempo_a, tiempo_b)) <= 2;		
+		ok = fabs(difftime(tiempo_a, tiempo_b)) < 2;		
 		if(ok) break;
 		lista_iter_avanzar(iter);
 		lista_iter_avanzar(iter_movil);
